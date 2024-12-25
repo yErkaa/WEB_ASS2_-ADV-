@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<header>
+    <a href="../html/index.html">Главная</a>
+    <a href="../html/login.html">Вход</a>
+    <h1>Регистрация</h1>
+</header>
+<main>
+    <form id="registerForm" method="POST" action="http://localhost:5000/auth/register" enctype="multipart/form-data">
+        <label for="username">Имя пользователя:</label>
+        <input type="email" id="username" name="username" required>
+
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" required>
+
+        <label for="avatar">Аватар:</label>
+        <input type="file" id="avatar" name="avatar">
+
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+
+</main>
+
+<footer>
+    <p>© 2024 Learning Places</p>
+</footer>
+
+<script src="../js/register.js"></script>
+</body>
+</html>

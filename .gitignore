@@ -1,10 +1,9 @@
+node_modules/
+.env
 ### IntelliJ IDEA ###
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-
-node_modules/
-.env
 
 ### Eclipse ###
 .apt_generated

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Создать пост</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<header>
+  <a href="../html/index.html">Главная</a>
+  <a href="../html/profile.html">Профиль</a>
+  <h1>Создание поста</h1>
+</header>
+<main>
+  <form id="postForm">
+    <label for="university">Выберите университет:</label>
+    <select id="university" name="university" required>
+      <option value="" disabled selected>Выберите университет</option>
+    </select>
+
+    <label for="title">Заголовок:</label>
+    <input type="text" id="title" name="title" required>
+
+    <label for="review">Отзыв:</label>
+    <textarea id="review" name="content" required></textarea>
+
+    <label for="rating">Оценка:</label>
+    <input type="number" id="rating" name="rating" min="1" max="5" required>
+
+    <button type="submit">Создать пост</button>
+  </form>
+</main>
+<footer>
+  <p>© 2024 Learning Places</p>
+</footer>
+<script src="../js/post.js"></script>
+</body>
+</html>
