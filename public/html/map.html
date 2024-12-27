@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта университетов</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<header>
+    <a href="../html/index.html">Главная</a>
+    <h1>Карта университетов</h1>
+</header>
+<main>
+    <select id="universityDropdown">
+        <option value="all">Все университеты</option>
+        <option value="L. N. Gumilyov Eurasian National University">L. N. Gumilyov Eurasian National University</option>
+        <option value="S. Seifullin Kazakh Agro Technical University">S. Seifullin Kazakh Agro Technical University</option>
+        <option value="Astana Medical University">Astana Medical University</option>
+        <option value="KAZGUU University">KAZGUU University</option>
+        <option value="Kazakh University of Economics, Finance and International Trade">Kazakh University of Economics, Finance and International Trade</option>
+        <option value="Eurasian Institute for the Humanities">Eurasian Institute for the Humanities</option>
+        <option value="Academy of Public Administration under the President of Kazakhstan">Academy of Public Administration under the President of Kazakhstan</option>
+        <option value="Kazakh University of Technology and Business">Kazakh University of Technology and Business</option>
+        <option value="Turan-Astana University">Turan-Astana University</option>
+        <option value="Astana IT University">Astana IT University</option>
+    </select>
+
+    <div id="map" style="width: 100%; height: 500px; border: 1px solid green;"></div>
+</main>
+<footer>
+    <p>© 2024 Learning Places</p>
+</footer>
+<script src="../js/map.js"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC4Db9H7vrr3umPEtrdk7PxGAgkN8aIzSo&callback=initMap"></script>
+
+</body>
+</html>
