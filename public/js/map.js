@@ -1,43 +1,71 @@
-const universities = [
-    { name: "L. N. Gumilyov Eurasian National University", address: "ул. Сатбаева 2, Алматинский район, Астана, Казахстан" },
-    { name: "S. Seifullin Kazakh Agro Technical University", address: "просп. Женис 62, Астана, Казахстан" },
-    { name: "Astana Medical University", address: "улица Бейбитшилик 49/A, Астана, Казахстан" },
-    { name: "KAZGUU University", address: "Кургальжинское ш. 13, Астана, Казахстан" },
-    { name: "Kazakh University of Economics, Finance and International Trade", address: "Ахмет Жұбанов көшесі 7, Астана, Казахстан" },
-    { name: "Eurasian Institute for the Humanities", address: "4 M.Zhumabayev prospect, Астана, Казахстан" },
-    { name: "Academy of Public Administration under the President of Kazakhstan", address: "пр-т. Абая 33 а, Астана, Казахстан" },
-    { name: "Kazakh University of Technology and Business", address: "улица Кайыма Мухамедханов 37А, Астана, Казахстан" },
-    { name: "Turan-Astana University", address: "ул. Ыкылас Дукенулы 29, Астана, Казахстан" },
-    { name: "Astana IT University", address: "Mangilik El. 35 Apt.40\n" +
-            "Prigorodnyy 010017 Казахстан, Астана 020000, Казахстан" }
-
-];
-
 let map;
 let markers = [];
 
-// Функция для инициализации карты
+// Инициализация карты
 function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 51.128, lng: 71.430 }, // Центр карты
         zoom: 12,
     });
 
-    // Добавляем маркеры
-    addMarkers(universities);
+    // Загрузка университетов с сервера и добавление маркеров
+    loadUniversitiesAndAddMarkers();
 
     // Слушаем изменения в выпадающем списке
     document.getElementById("universityDropdown").addEventListener("change", handleUniversityChange);
 }
 
+// Загрузка университетов с сервера
+async function loadUniversitiesAndAddMarkers() {
+    try {
+        const response = await fetch('http://localhost:5000/universities'); // Замените URL на ваш API
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки университетов');
+        }
 
-// Функция для добавления маркеров
+        const universities = await response.json();
+        console.log('Загруженные университеты:', universities);
+
+        // Заполняем выпадающий список университетов
+        populateUniversityDropdown(universities);
+
+        // Добавляем маркеры на карту
+        addMarkers(universities);
+    } catch (err) {
+        console.error('Ошибка загрузки университетов:', err);
+        alert('Не удалось загрузить список университетов.');
+    }
+}
+
+// Заполнение выпадающего списка
+function populateUniversityDropdown(universities) {
+    const dropdown = document.getElementById("universityDropdown");
+    dropdown.innerHTML = ''; // Очищаем старые опции
+
+    // Добавляем опцию "Все университеты"
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = 'Все университеты';
+    dropdown.appendChild(allOption);
+
+    // Добавляем университеты
+    universities.forEach(university => {
+        const option = document.createElement('option');
+        option.value = university.name; // Используем название университета как значение
+        option.textContent = university.name; // Отображаем название университета
+        dropdown.appendChild(option);
+    });
+}
+
+// Добавление маркеров на карту
 function addMarkers(universities) {
     const geocoder = new google.maps.Geocoder();
 
     // Удаляем старые маркеры
     markers.forEach(marker => marker.setMap(null));
     markers = [];
+
+    // Проходимся по университетам
     universities.forEach(university => {
         console.log(`Добавляем университет: ${university.name}`);
         geocoder.geocode({ address: university.address }, (results, status) => {
@@ -63,37 +91,43 @@ function handleUniversityChange(event) {
     const selectedUniversity = event.target.value;
 
     if (selectedUniversity === "all") {
-        addMarkers(universities);
+        // Показать все университеты
+        loadUniversitiesAndAddMarkers();
         map.setCenter({ lat: 51.128, lng: 71.430 });
         map.setZoom(12);
     } else {
-        const university = universities.find(u => u.name === selectedUniversity);
-        if (university) {
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ address: university.address }, (results, status) => {
-                if (status === google.maps.GeocoderStatus.OK) {
-                    const position = results[0].geometry.location;
+        fetch('http://localhost:5000/universities')
+            .then(response => response.json())
+            .then(universities => {
+                const university = universities.find(u => u.name === selectedUniversity);
+                if (university) {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: university.address }, (results, status) => {
+                        if (status === google.maps.GeocoderStatus.OK) {
+                            const position = results[0].geometry.location;
 
-                    // Очищаем старые маркеры
-                    markers.forEach(marker => marker.setMap(null));
-                    markers = [];
+                            // Удаляем старые маркеры
+                            markers.forEach(marker => marker.setMap(null));
+                            markers = [];
 
-                    // Создаем новый маркер
-                    const marker = new google.maps.Marker({
-                        map: map,
-                        position: position,
-                        title: university.name,
+                            // Добавляем новый маркер
+                            const marker = new google.maps.Marker({
+                                map: map,
+                                position: position,
+                                title: university.name,
+                            });
+
+                            console.log(`Координаты для ${university.name}:`, results[0].geometry.location);
+
+                            markers.push(marker);
+
+                            map.setCenter(position);
+                            map.setZoom(14);
+                        } else {
+                            console.error(`Geocode error for ${university.name}: ${status}`);
+                        }
                     });
-                    console.log(`Координаты для ${university.name}:`, results[0].geometry.location);
-
-                    markers.push(marker);
-
-                    map.setCenter(position);
-                    map.setZoom(14);
-                } else {
-                    console.error(`Geocode error for ${university.name}: ${status}`);
                 }
             });
-        }
     }
 }

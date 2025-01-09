@@ -15,7 +15,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
         if (response.ok) {
             const data = await response.json();
-            localStorage.setItem('token', data.token); // Сохраняем токен в localStorage
+            localStorage.setItem('token', data.token);
             alert('Вход успешен! Перенаправляем на профиль...');
             window.location.href = 'profile.html';
         } else {

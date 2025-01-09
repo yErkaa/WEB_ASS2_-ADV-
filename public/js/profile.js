@@ -17,15 +17,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (response.ok) {
             const user = await response.json();
-            console.log('Данные пользователя:', user); // Логируем данные пользователя
-
+            console.log('Данные пользователя:', user);
             // Обновляем отображение на странице
-            document.getElementById('username').textContent = user.username; // Email
-            document.getElementById('nickname').value = user.nickname || ''; // Nickname
+            document.getElementById('username').textContent = user.username;
+            document.getElementById('nickname').value = user.nickname || '';
 
             // Проверяем и обновляем аватар
             if (user.avatar) {
-                console.log('Путь к аватару:', user.avatar); // Лог пути к аватару
+                console.log('Путь к аватару:', user.avatar);
                 document.getElementById('avatar').src = `http://localhost:5000/${user.avatar}`;
             } else {
                 document.getElementById('avatar').src = 'default-avatar.png';
@@ -73,14 +72,13 @@ document.getElementById('updateNicknameButton').addEventListener('click', async 
     }
 });
 
-// Выход из аккаунта
+
 document.getElementById('logoutButton').addEventListener('click', () => {
     localStorage.removeItem('token'); // Удаляем токен из localStorage
     alert('Вы успешно вышли из аккаунта.');
     window.location.href = 'login.html';
 });
 
-// Удаление аккаунта
 document.getElementById('deleteAccountButton').addEventListener('click', async () => {
     if (!confirm('Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.')) {
         return;

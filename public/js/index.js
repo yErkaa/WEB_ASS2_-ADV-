@@ -1,119 +1,164 @@
 document.addEventListener('DOMContentLoaded', async () => {
-
     const token = localStorage.getItem('token');
     if (!token) {
         alert('Вы не авторизованы. Перенаправляем на страницу входа...');
         window.location.href = 'login.html';
         return;
     }
-    console.log('Токен:', token);
+    console.log('Токен загружен.');
 
     const universityFilter = document.getElementById('universityFilter');
     const postsContainer = document.getElementById('postsContainer');
     let currentUser = null;
 
-    // Получаем текущего пользователя
+    // Получение текущего пользователя
     const getCurrentUser = async () => {
         try {
             const response = await fetch('http://localhost:5000/auth/user', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (response.ok) {
-                return await response.json();
+                const user = await response.json();
+                console.log('Пользователь авторизован.');
+                return user;
             } else {
                 throw new Error('Не удалось загрузить информацию о пользователе');
             }
         } catch (err) {
-            console.error('Ошибка получения пользователя:', err);
+            console.error('Ошибка получения пользователя.');
             alert('Ошибка получения пользователя.');
             return null;
         }
     };
 
-    // Загружаем список университетов
+    // Загрузка университетов
     const loadUniversities = async () => {
         try {
             const response = await fetch('http://localhost:5000/universities', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) throw new Error('Ошибка загрузки университетов');
             const universities = await response.json();
 
-            // Добавляем опцию для всех университетов
+            console.log('Университеты успешно загружены.');
+
+            universityFilter.innerHTML = '';
+
             const allOption = document.createElement('option');
             allOption.value = 'all';
             allOption.textContent = 'Все университеты';
             universityFilter.appendChild(allOption);
 
-            // Заполняем выпадающий список
-            universities.forEach(university => {
+            universities.forEach((university) => {
                 const option = document.createElement('option');
-                option.value = university;
-                option.textContent = university;
+                option.value = university._id; // Используем ID университета
+                option.textContent = university.name;
                 universityFilter.appendChild(option);
             });
         } catch (err) {
-            console.error('Ошибка загрузки университетов:', err);
+            console.error('Ошибка загрузки университетов.');
             alert('Не удалось загрузить список университетов.');
         }
     };
 
-    // Загружаем посты
-    const loadPosts = async (university = 'all') => {
-        postsContainer.innerHTML = ''; // Очищаем контейнер перед загрузкой
+    // Загрузка постов
+    const loadPosts = async (universityId = 'all') => {
+        postsContainer.innerHTML = ''; // Очищаем контейнер с постами
         try {
             const response = await fetch('http://localhost:5000/posts/get', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) throw new Error('Ошибка загрузки постов');
             const posts = await response.json();
 
-            // Фильтруем посты, если выбран конкретный университет
-            const filteredPosts = university === 'all'
-                ? posts
-                : posts.filter(post => post.university === university);
+            console.log('Посты успешно загружены.');
 
-            // Добавляем посты на страницу
-            filteredPosts.forEach(post => {
+            const filteredPosts = universityId === 'all' ? posts : posts.filter((post) => post.university?._id === universityId);
+
+            filteredPosts.forEach((post) => {
                 const postElement = document.createElement('div');
                 postElement.className = 'post';
 
-                // Используем никнейм или email автора
-                const authorName = post.author.nickname || post.author.username;
+                const authorName = post.author?.nickname || post.author?.username || 'Неизвестный автор';
+                const universityName = post.university?.name || 'Неизвестный университет';
+                const universityAddress = post.university?.address || 'Адрес не указан';
+                const universityDescription = post.university?.description || 'Описание отсутствует';
 
                 postElement.innerHTML = `
-                    <h3>${post.title}</h3>
-                    <p>${post.content}</p>
-                    <p>Университет: ${post.university}</p>
-                    <p>Оценка: ${post.rating}</p>
-                    <p>Автор: ${authorName}</p>
-                    ${
-                    post.author._id === currentUser._id
+                <h3>${post.title}</h3>
+                <p>${post.content}</p>
+                <p>Университет: ${universityName}</p>
+                <p>Адрес: ${universityAddress}</p>
+                <p>Описание: ${universityDescription}</p>
+                <p>Оценка: ${post.rating}</p>
+                <p>Автор: ${authorName}</p>
+                <p>Комментарии: ${post.commentCount || 0}</p>
+                <p>Лайков: <span class="likes-count" data-id="${post._id}">${post.likes ? post.likes.length : 0}</span></p>
+                <button class="like-post" data-id="${post._id}">
+                    ${post.likes && post.likes.includes(currentUser._id) ? 'Убрать лайк' : 'Лайкнуть'}
+                </button>
+
+
+
+                ${
+                    post.author && post.author._id === currentUser._id
                         ? `<button class="edit-post" data-id="${post._id}">Редактировать</button>
-                               <button class="delete-post" data-id="${post._id}">Удалить</button>`
+                           <button class="delete-post" data-id="${post._id}">Удалить</button>`
                         : ''
                 }
-                `;
+                <button onclick="location.href='comments_view.html?postId=${post._id}'">Комментарии</button>
+                <p><small>Создан: ${new Date(post.createdAt).toLocaleString()}</small></p>
+            `;
                 postsContainer.appendChild(postElement);
             });
+
 
             if (filteredPosts.length === 0) {
                 postsContainer.innerHTML = '<p>Постов нет.</p>';
             }
         } catch (err) {
-            console.error('Ошибка загрузки постов:', err);
+            console.error('Ошибка загрузки постов.');
             alert('Не удалось загрузить посты.');
         }
     };
 
-    // Событие для изменения фильтра по университету
-    universityFilter.addEventListener('change', () => {
-        const selectedUniversity = universityFilter.value;
-        loadPosts(selectedUniversity);
+    postsContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('like-post')) {
+            const postId = e.target.dataset.id;
+
+            try {
+                const response = await fetch(`http://localhost:5000/posts/${postId}/toggle-like`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (!response.ok) throw new Error('Ошибка при переключении лайка');
+
+                const { likesCount, message } = await response.json();
+                alert(message);
+
+                // Обновляем количество лайков и текст кнопки
+                const likesCountElement = document.querySelector(`.likes-count[data-id="${postId}"]`);
+                likesCountElement.textContent = likesCount;
+
+                e.target.textContent = message === 'Лайк добавлен' ? 'Убрать лайк' : 'Лайкнуть';
+            } catch (err) {
+                console.error('Ошибка при переключении лайка:', err);
+                alert('Не удалось переключить лайк.');
+            }
+        }
     });
 
-    // Событие для редактирования и удаления постов
-    document.addEventListener('click', async (e) => {
+
+
+
+    // Обработка изменения выбора университета
+    universityFilter.addEventListener('change', () => {
+        const selectedUniversityId = universityFilter.value;
+        loadPosts(selectedUniversityId);
+    });
+
+    postsContainer.addEventListener('click', async (e) => {
         const postId = e.target.dataset.id;
 
         if (e.target.classList.contains('edit-post')) {
@@ -124,14 +169,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const response = await fetch(`http://localhost:5000/posts/${postId}`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ title: newTitle, content: newContent, rating: newRating })
+                    body: JSON.stringify({ title: newTitle, content: newContent, rating: newRating }),
                 });
                 if (response.ok) {
                     alert('Пост успешно обновлён!');
-                    loadPosts(universityFilter.value); // Перезагружаем посты
+                    loadPosts(universityFilter.value);
                 } else {
                     const error = await response.json();
                     alert(`Ошибка обновления поста: ${error.error}`);
@@ -145,11 +190,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch(`http://localhost:5000/posts/${postId}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
                 if (response.ok) {
                     alert('Пост успешно удалён!');
-                    loadPosts(universityFilter.value); // Перезагружаем посты
+                    loadPosts(universityFilter.value);
                 } else {
                     const error = await response.json();
                     alert(`Ошибка удаления поста: ${error.error}`);
@@ -161,8 +206,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Загружаем университеты и посты при загрузке страницы
     currentUser = await getCurrentUser();
-    await loadUniversities();
-    await loadPosts();
+    if (currentUser) {
+        await loadUniversities();
+        await loadPosts();
+    }
 });

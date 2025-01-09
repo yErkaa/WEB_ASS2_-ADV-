@@ -1,33 +1,40 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Post = require('../models/Post');
-const authMiddleware = require('../middleware/authMiddleware'); // Подключаем middleware
+const University = require('../models/University');
+const authMiddleware = require('../middleware/authMiddleware');
+const Comment = require('../models/Comment');
 
 const router = express.Router();
 const ObjectId = mongoose.Types.ObjectId;
 
-// Получить все посты
+// Получение всех постов с комментариями и лайками
 router.get('/get', async (req, res) => {
     try {
-        console.log('Запрос на получение постов:', req.headers);
-        const posts = await Post.find().populate('author', 'nickname username avatar');
+        const allPosts = await Post.find()
+            .populate('author', 'nickname username avatar')
+            .populate('university', 'name address description');
 
-        console.log('Найденные посты:', posts);
-        res.json(posts);
+        const postsWithComments = await Promise.all(
+            allPosts.map(async (post) => {
+                const commentCount = await Comment.countDocuments({ post_id: post._id });
+                return {
+                    ...post.toObject(),
+                    commentCount,
+                    likes: post.likes || [],
+                };
+            })
+        );
+
+        res.json(postsWithComments);
     } catch (err) {
         console.error('Ошибка при получении постов:', err);
         res.status(500).json({ error: 'Ошибка при получении постов' });
     }
 });
 
-
-
-
-// Создать новый пост
+// Создание нового поста
 router.post('/create', authMiddleware, async (req, res) => {
-    console.log('Данные из запроса:', req.body);
-    console.log('Пользователь из токена:', req.user);
-
     const { university, title, review, rating } = req.body;
 
     if (!university || !title || !review || !rating) {
@@ -35,15 +42,20 @@ router.post('/create', authMiddleware, async (req, res) => {
     }
 
     try {
+        const universityDoc = await University.findOne({ name: university });
+        if (!universityDoc) {
+            return res.status(404).json({ error: 'Университет не найден' });
+        }
+
         const post = new Post({
-            university,
+            university: universityDoc._id,
             title,
             content: review,
             rating,
             author: req.user.id,
         });
+
         await post.save();
-        console.log('Пост успешно создан:', post);
         res.status(201).json({ message: 'Пост успешно создан', post });
     } catch (error) {
         console.error('Ошибка создания поста:', error);
@@ -51,31 +63,8 @@ router.post('/create', authMiddleware, async (req, res) => {
     }
 });
 
-// Получить пост по ID
+// Получение поста и комментариев
 router.get('/:id', async (req, res) => {
-    try {
-        console.log('ID запроса:', req.params.id);
-        console.log('Проверка ObjectId.isValid:', ObjectId.isValid(req.params.id));
-
-        if (!ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ error: 'Неверный формат ID' });
-        }
-
-        const post = await Post.findById(req.params.id);
-
-        if (!post) {
-            return res.status(404).json({ error: 'Пост не найден' });
-        }
-
-        res.json(post);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Обновить пост
-router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -83,11 +72,71 @@ router.put('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Неверный формат ID' });
         }
 
-        const updatedPost = await Post.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true } // { new: true } возвращает обновленный объект
-        );
+        const post = await Post.findById(id)
+            .populate('author', 'nickname username avatar')
+            .populate('university', 'name address description');
+
+        if (!post) {
+            return res.status(404).json({ error: 'Пост не найден' });
+        }
+
+        const comments = await Comment.find({ post_id: id })
+            .populate('author_id', 'nickname username avatar')
+            .sort({ createdAt: -1 });
+
+        res.json({ post, comments });
+    } catch (err) {
+        console.error('Ошибка при получении поста:', err);
+        res.status(500).json({ error: 'Ошибка при получении поста' });
+    }
+});
+
+// Переключение лайка
+router.post('/:id/toggle-like', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const post = await Post.findById(id);
+        if (!post) {
+            return res.status(404).json({ error: 'Пост не найден' });
+        }
+
+        const hasLiked = Array.isArray(post.likes) && post.likes.includes(userId);
+        if (hasLiked) {
+            post.likes = post.likes.filter((like) => like.toString() !== userId);
+        } else {
+            post.likes.push(userId);
+        }
+
+        await post.save();
+        res.json({ message: hasLiked ? 'Лайк удалён' : 'Лайк добавлен', likesCount: post.likes.length });
+    } catch (err) {
+        console.error('Ошибка при переключении лайка:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+router.put('/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!ObjectId.isValid(id)) {
+            return res.status(400).json({ error: 'Неверный формат ID' });
+        }
+
+        if (req.body.university) {
+            const university = await University.findOne({ name: req.body.university });
+            if (!university) {
+                return res.status(404).json({ error: 'Указанный университет не найден' });
+            }
+            req.body.university = university._id;
+        }
+
+        const updatedPost = await Post.findByIdAndUpdate(id, req.body, {
+            new: true,
+            runValidators: true,
+        }).populate('author', 'nickname username avatar').populate('university', 'name address description');
 
         if (!updatedPost) {
             return res.status(404).json({ error: 'Пост не найден' });
@@ -95,13 +144,12 @@ router.put('/:id', async (req, res) => {
 
         res.json(updatedPost);
     } catch (err) {
-        console.error(err);
+        console.error('Ошибка при обновлении поста:', err);
         res.status(400).json({ error: 'Ошибка при обновлении поста' });
     }
 });
 
-// Удалить пост
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -109,15 +157,19 @@ router.delete('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Неверный формат ID' });
         }
 
-        const deletedPost = await Post.findByIdAndDelete(id);
-
-        if (!deletedPost) {
+        const post = await Post.findById(id);
+        if (!post) {
             return res.status(404).json({ error: 'Пост не найден' });
         }
 
-        res.json({ message: 'Пост удалён' });
+        if (post.author.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'У вас нет прав для удаления этого поста' });
+        }
+
+        await post.deleteOne();
+        res.json({ message: 'Пост успешно удалён' });
     } catch (err) {
-        console.error(err);
+        console.error('Ошибка при удалении поста:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });

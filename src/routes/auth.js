@@ -8,13 +8,13 @@ const fs = require('fs');
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Проверяем, что JWT_SECRET настроен
+
 if (!JWT_SECRET) {
     console.error('JWT_SECRET не настроен в переменных окружения');
     throw new Error('JWT_SECRET не найден. Пожалуйста, настройте его в .env');
 }
 
-// Настройка Multer для загрузки файлов
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -26,14 +26,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Функция проверки токена
+
 const verifyToken = (authHeader) => {
     if (!authHeader) throw new Error('Нет токена, доступ запрещён');
     const token = authHeader.split(' ')[1];
     return jwt.verify(token, JWT_SECRET);
 };
 
-// Регистрация пользователя
+
 router.post('/register', upload.single('avatar'), async (req, res) => {
     try {
         console.log('Данные из тела запроса:', req.body);
@@ -53,19 +53,19 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         console.log('Хэшированный пароль при регистрации:', hashedPassword);
 
-        // Обрабатываем аватар с помощью sharp
+
         let avatarPath = '';
         if (req.file) {
             const resizedImagePath = `uploads/resized-${req.file.filename}`;
             await sharp(req.file.path)
-                .resize(128, 128) // Изменяем размер изображения до 128x128 пикселей
-                .toFormat('png') // Преобразуем в формат PNG
-                .toFile(resizedImagePath); // Сохраняем обработанный файл
+                .resize(128, 128)
+                .toFormat('png')
+                .toFile(resizedImagePath);
 
-            // Удаляем исходный файл
+
             fs.unlinkSync(req.file.path);
 
-            avatarPath = resizedImagePath.replace(/\\/g, '/'); // Преобразуем путь для URL
+            avatarPath = resizedImagePath.replace(/\\/g, '/');
         }
 
         const user = new User({
@@ -84,7 +84,7 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
     }
 });
 
-// Логин пользователя
+
 router.post('/login', async (req, res) => {
     try {
         console.log('Данные из тела запроса:', req.body);
@@ -117,7 +117,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Удаление пользователя
+
 router.delete('/user', async (req, res) => {
     try {
         const authHeader = req.header('Authorization');
@@ -136,7 +136,7 @@ router.delete('/user', async (req, res) => {
     }
 });
 
-// Получение информации о пользователе
+
 router.get('/user', async (req, res) => {
     try {
         const authHeader = req.header('Authorization');
@@ -155,7 +155,7 @@ router.get('/user', async (req, res) => {
     }
 });
 
-// Обновление никнейма
+
 router.put('/user', async (req, res) => {
     try {
         const authHeader = req.header('Authorization');
