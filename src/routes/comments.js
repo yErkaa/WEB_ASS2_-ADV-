@@ -92,6 +92,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('Запрос на удаление комментария с ID:', id);
 
         if (!ObjectId.isValid(id)) {
             return res.status(400).json({ error: 'Неверный формат ID' });
@@ -102,14 +103,14 @@ router.delete('/:id', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Комментарий не найден' });
         }
 
-        // Проверяем, что пользователь является автором комментария
+        console.log('ID пользователя из токена:', req.user.id);
+        console.log('ID автора комментария:', comment.author_id.toString());
+
         if (comment.author_id.toString() !== req.user.id) {
             return res.status(403).json({ error: 'У вас нет прав для удаления этого комментария' });
         }
 
-        // Удаляем комментарий
         await Comment.deleteOne({ _id: id });
-
         res.json({ message: 'Комментарий успешно удалён' });
     } catch (err) {
         console.error('Ошибка при удалении комментария:', err);

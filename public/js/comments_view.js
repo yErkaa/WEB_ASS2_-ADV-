@@ -1,8 +1,45 @@
+// Функция для отображения модального окна с кнопкой "Отмена"
+function showModalWithCancel(message, input = false, callback = null, cancelCallback = null) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <p>${message}</p>
+            ${input ? '<textarea id="modalInput"></textarea>' : ''}
+            <div class="modal-buttons">
+                <button id="modalCancelButton" class="cancel-btn">Отмена</button>
+                <button id="modalOkButton" class="ok-btn">OK</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalInput = document.getElementById('modalInput');
+    const cancelButton = document.getElementById('modalCancelButton');
+    const okButton = document.getElementById('modalOkButton');
+
+    cancelButton.addEventListener('click', () => {
+        if (cancelCallback) cancelCallback();
+        document.body.removeChild(modal); // Закрыть модальное окно
+    });
+
+    okButton.addEventListener('click', () => {
+        if (input && callback) {
+            callback(modalInput.value);
+        } else if (callback) {
+            callback();
+        }
+        document.body.removeChild(modal); // Закрыть модальное окно
+    });
+}
+
+// Основной код
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        alert('Вы не авторизованы. Перенаправляем на страницу входа...');
-        window.location.href = 'login.html';
+        showModalWithCancel('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
+            window.location.href = 'login.html';
+        });
         return;
     }
 
@@ -10,33 +47,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const commentsContainer = document.getElementById('commentsContainer');
     const commentForm = document.getElementById('commentForm');
     const commentContent = document.getElementById('commentContent');
-
-    // Получаем postId из URL
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('postId');
 
     if (!postId) {
-        alert('ID поста не указан.');
+        showModalWithCancel('ID поста не указан.');
         return;
     }
 
+    let currentUser = null;
+
     // Загрузка текущего пользователя
-    const getCurrentUser = async () => {
+    const loadCurrentUser = async () => {
         try {
             const response = await fetch('http://localhost:5000/auth/user', {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!response.ok) throw new Error('Не удалось получить пользователя');
-            return await response.json();
+            if (!response.ok) throw new Error('Не удалось получить данные пользователя');
+            currentUser = await response.json();
         } catch (err) {
-            console.error('Ошибка при получении пользователя:', err);
-            alert('Ошибка при получении пользователя.');
-            return null;
+            console.error('Ошибка загрузки текущего пользователя:', err);
+            showModalWithCancel('Не удалось загрузить информацию о текущем пользователе.');
         }
     };
-
-    const currentUser = await getCurrentUser();
-    if (!currentUser) return;
 
     // Загрузка поста и комментариев
     const loadPostAndComments = async () => {
@@ -49,50 +82,108 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const { post, comments } = await response.json();
 
-            const formattedDate = new Date(post.createdAt).toLocaleString();
             // Отображение поста
             postContainer.innerHTML = `
                 <h2>${post.title}</h2>
                 <p>${post.content}</p>
-                <p>Университет: ${post.university.name}</p>
+                <p>Университет: ${post.university?.name || 'Неизвестный университет'}</p>
                 <p>Автор: ${post.author.nickname || post.author.username}</p>
-                <small>Создан: ${formattedDate}</small>
+                <small>Создан: ${new Date(post.createdAt).toLocaleString()}</small>
             `;
 
             // Отображение комментариев
             commentsContainer.innerHTML = '';
             comments.forEach((comment) => {
                 const isAuthor = comment.author_id._id === currentUser._id;
-                const commentElement = document.createElement('div');
-                commentElement.className = 'comment';
-                commentElement.innerHTML = `
+                const commentCard = document.createElement('div');
+                commentCard.className = 'comment-card';
+                commentCard.innerHTML = `
                     <p>${comment.content}</p>
-                    <p>Автор: ${comment.author_id.nickname || comment.author_id.username}</p>
-                    <small>${new Date(comment.createdAt).toLocaleString()}</small>
+                    <p class="comment-author">Автор: ${comment.author_id.nickname || comment.author_id.username}</p>
+                    <p class="comment-date">${new Date(comment.createdAt).toLocaleString()}</p>
                     ${
                     isAuthor
-                        ? `
-                                <button class="edit-comment" data-id="${comment._id}">Редактировать</button>
-                                <button class="delete-comment" data-id="${comment._id}">Удалить</button>
-                              `
+                        ? `<div class="comment-actions">
+                                <button class="edit-btn" data-id="${comment._id}" data-content="${comment.content}">Редактировать</button>
+                                <button class="delete-btn" data-id="${comment._id}">Удалить</button>
+                               </div>`
                         : ''
                 }
                 `;
-                commentsContainer.appendChild(commentElement);
+                commentsContainer.appendChild(commentCard);
             });
         } catch (err) {
             console.error('Ошибка при загрузке поста и комментариев:', err);
-            alert('Не удалось загрузить пост.');
+            showModalWithCancel('Не удалось загрузить данные.');
         }
     };
 
-    // Отправка комментария
+    // Делегирование событий для редактирования и удаления
+    commentsContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('edit-btn')) {
+            const commentId = e.target.dataset.id;
+            const currentContent = e.target.dataset.content;
+
+            showModalWithCancel('Введите новый текст комментария:', true, async (newContent) => {
+                if (!newContent.trim()) {
+                    showModalWithCancel('Комментарий не может быть пустым.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`http://localhost:5000/comments/${commentId}`, {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ content: newContent }),
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Ошибка обновления комментария');
+                    }
+
+                    showModalWithCancel('Комментарий успешно обновлён.', false, loadPostAndComments);
+                } catch (err) {
+                    console.error('Ошибка при обновлении комментария:', err);
+                    showModalWithCancel('Не удалось обновить комментарий.');
+                }
+            });
+        }
+
+        if (e.target.classList.contains('delete-btn')) {
+            const commentId = e.target.dataset.id;
+
+            showModalWithCancel('Вы уверены, что хотите удалить комментарий?', false, async () => {
+                try {
+                    const response = await fetch(`http://localhost:5000/comments/${commentId}`, {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Не удалось удалить комментарий.');
+                    }
+
+                    showModalWithCancel('Комментарий успешно удалён.', false, loadPostAndComments);
+                } catch (err) {
+                    console.error('Ошибка при удалении комментария:', err);
+                    showModalWithCancel('Не удалось удалить комментарий.');
+                }
+            });
+        }
+    });
+
+    // Отправка нового комментария
     commentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const commentContentValue = commentContent.value.trim();
 
         if (!commentContentValue) {
-            alert('Комментарий не может быть пустым.');
+            showModalWithCancel('Комментарий не может быть пустым.');
             return;
         }
 
@@ -106,60 +197,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify({ post_id: postId, content: commentContentValue }),
             });
 
-            if (!response.ok) throw new Error('Не удалось отправить комментарий');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Ошибка создания комментария');
+            }
 
-            commentContent.value = ''; // Очищаем поле ввода
-            await loadPostAndComments(); // Обновляем список комментариев
+            commentContent.value = '';
+            showModalWithCancel('Комментарий успешно добавлен.', false, loadPostAndComments);
         } catch (err) {
             console.error('Ошибка при добавлении комментария:', err);
-            alert('Не удалось отправить комментарий.');
+            showModalWithCancel('Не удалось отправить комментарий.');
         }
     });
 
-    // Обработка кнопок редактирования и удаления
-    commentsContainer.addEventListener('click', async (e) => {
-        const commentId = e.target.dataset.id;
-
-        if (e.target.classList.contains('edit-comment')) {
-            const newContent = prompt('Введите новый текст комментария:');
-            if (!newContent) return;
-
-            try {
-                const response = await fetch(`http://localhost:5000/comments/${commentId}`, {
-                    method: 'PUT',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ content: newContent }),
-                });
-
-                if (!response.ok) throw new Error('Не удалось обновить комментарий');
-                await loadPostAndComments(); // Обновляем комментарии
-            } catch (err) {
-                console.error('Ошибка при обновлении комментария:', err);
-                alert('Не удалось обновить комментарий.');
-            }
-        } else if (e.target.classList.contains('delete-comment')) {
-            if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) return;
-
-            try {
-                const response = await fetch(`http://localhost:5000/comments/${commentId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!response.ok) throw new Error('Не удалось удалить комментарий');
-                await loadPostAndComments(); // Обновляем комментарии
-            } catch (err) {
-                console.error('Ошибка при удалении комментария:', err);
-                alert('Не удалось удалить комментарий.');
-            }
-        }
-    });
-
-    // Загрузка поста и комментариев при открытии страницы
+    await loadCurrentUser();
     await loadPostAndComments();
 });

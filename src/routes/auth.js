@@ -36,23 +36,13 @@ const verifyToken = (authHeader) => {
 
 router.post('/register', upload.single('avatar'), async (req, res) => {
     try {
-        console.log('Данные из тела запроса:', req.body);
-        console.log('Загруженный файл:', req.file);
-
         const { username, password } = req.body;
 
         if (!username || !password) {
             return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
         }
 
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(username.trim())) {
-            return res.status(400).json({ error: 'Имя пользователя должно быть действительным email-адресом' });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log('Хэшированный пароль при регистрации:', hashedPassword);
-
 
         let avatarPath = '';
         if (req.file) {
@@ -62,9 +52,7 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
                 .toFormat('png')
                 .toFile(resizedImagePath);
 
-
             fs.unlinkSync(req.file.path);
-
             avatarPath = resizedImagePath.replace(/\\/g, '/');
         }
 
@@ -72,17 +60,24 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
             username: username.trim(),
             password: hashedPassword,
             avatar: avatarPath,
-
         });
 
         await user.save();
-        console.log('Пользователь успешно зарегистрирован:', user);
         res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });
     } catch (err) {
         console.error('Ошибка при регистрации:', err);
+
+        // Проверяем ошибку дублирующегося значения
+        if (err.message === 'Имя пользователя уже занято') {
+            return res.status(400).json({ error: 'Пользователь с таким email уже зарегистрирован' });
+        }
+
         res.status(500).json({ error: 'Ошибка при регистрации' });
     }
 });
+
+
+
 
 
 router.post('/login', async (req, res) => {

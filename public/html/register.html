@@ -8,30 +8,39 @@
 </head>
 <body>
 <header>
-    <a href="../html/index.html">Главная</a>
-    <a href="../html/login.html">Вход</a>
-    <h1>Регистрация</h1>
+    <h1>Learning Places</h1>
+    <nav>
+        <a href="../html/index.html">Главная</a>
+        <a href="../html/login.html">Вход</a>
+    </nav>
 </header>
 <main>
     <form id="registerForm" method="POST" action="http://localhost:5000/auth/register" enctype="multipart/form-data">
+        <h2>Регистрация</h2>
         <label for="username">Имя пользователя:</label>
-        <input type="email" id="username" name="username" required>
+        <input type="email" id="username" name="username" placeholder="Введите ваш email" required>
 
         <label for="password">Пароль:</label>
-        <input type="password" id="password" name="password" required>
+
+        <div class="password-container">
+            <input type="password" id="password" placeholder="Введите пароль" required />
+            <span id="togglePassword" class="toggle-password">👁️</span>
+        </div>
 
         <label for="avatar">Аватар:</label>
-        <input type="file" id="avatar" name="avatar">
+        <div class="file-upload">
+            <input type="file" id="avatar" name="avatar" hidden>
+            <button type="button" class="file-upload-btn" onclick="document.getElementById('avatar').click()">Выберите файл</button>
+            <span id="file-name" class="file-name">Файл не выбран</span>
+        </div>
+
 
         <button type="submit">Зарегистрироваться</button>
     </form>
-
 </main>
-
 <footer>
     <p>© 2024 Learning Places</p>
 </footer>
-
 <script src="../js/register.js"></script>
 </body>
 </html>

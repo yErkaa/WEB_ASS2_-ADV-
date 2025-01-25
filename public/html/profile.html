@@ -8,22 +8,30 @@
 </head>
 <body>
 <header>
-    <a href="../html/index.html">Главная</a>
-    <a href="../html/post_view.html">Создать пост</a>
-    <h1>Ваш профиль</h1>
+    <h1>Learning Places</h1>
+    <nav>
+        <a href="../html/index.html">Главная</a>
+        <a href="../html/post_view.html">Создать пост</a>
+    </nav>
 </header>
 <main>
-    <div id="profile">
-        <img id="avatar" src="" alt="Аватар">
-        <h2>Email: <span id="username"></span></h2>
-        <label for="nickname">Никнейм:</label>
-        <input type="text" id="nickname">
-        <button id="updateNicknameButton">Изменить никнейм</button>
-        <button id="logoutButton">Выйти</button>
-        <button id="deleteAccountButton">Удалить аккаунт</button>
-
-    </div>
-
+    <section class="profile-container">
+        <div class="profile-header">
+            <img id="avatar" src="default-avatar.png" alt="Аватар" class="profile-avatar">
+            <h2 id="username">Ваш Email: example@mail.com</h2>
+        </div>
+        <div class="profile-body">
+            <label for="nickname">Никнейм:</label>
+            <div class="nickname-input-wrapper">
+                <input type="text" id="nickname" placeholder="Введите новый никнейм">
+            </div>
+            <button id="updateNicknameButton">Изменить никнейм</button>
+        </div>
+        <div class="profile-footer">
+            <button id="logoutButton" class="btn-logout">Выйти</button>
+            <button id="deleteAccountButton" class="btn-delete">Удалить аккаунт</button>
+        </div>
+    </section>
 </main>
 <footer>
     <p>© 2024 Learning Places</p>

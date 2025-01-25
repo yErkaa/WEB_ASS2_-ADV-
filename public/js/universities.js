@@ -1,3 +1,26 @@
+// Функция для отображения модального окна
+function showModal(message, input = false, callback = null) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <p>${message}</p>
+            ${input ? '<textarea id="modalInput"></textarea>' : ''}
+            <button id="modalOkButton">OK</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalInput = document.getElementById('modalInput');
+    const okButton = document.getElementById('modalOkButton');
+    okButton.addEventListener('click', () => {
+        if (input && callback) {
+            callback(modalInput.value);
+        }
+        document.body.removeChild(modal);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('http://localhost:5000/universities');
@@ -12,6 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     } catch (err) {
         console.error('Ошибка:', err);
-        alert('Не удалось загрузить список университетов.');
+        showModal('Не удалось загрузить список университетов.');
     }
 });

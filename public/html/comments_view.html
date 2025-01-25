@@ -3,21 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Комментарии к посту</title>
+  <title>Комментарии</title>
   <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 <header>
-  <a href="../html/index.html">Главная</a>
-  <a href="../html/profile.html">Профиль</a>
-  <h1>Комментарии</h1>
+  <h1>Learning Places</h1>
+  <nav>
+    <a href="../html/index.html">Главная</a>
+    <a href="../html/post_view.html">Создать пост</a>
+    <a href="../html/profile.html">Профиль</a>
+  </nav>
 </header>
 <main>
-  <div id="postContainer"></div>
-  <hr>
-  <div id="commentsContainer"></div>
+  <section id="postContainer">
+    <!-- Данные о посте будут загружены через JavaScript -->
+  </section>
+
+  <section id="commentsContainer">
+    <h2>Комментарии</h2>
+    <!-- Комментарии будут добавлены через JavaScript -->
+  </section>
+
   <form id="commentForm">
-    <textarea id="commentContent" placeholder="Напишите комментарий..." required></textarea>
+    <h3>Добавить комментарий</h3>
+    <textarea id="commentContent" placeholder="Введите ваш комментарий" required></textarea>
     <button type="submit">Отправить</button>
   </form>
 </main>
