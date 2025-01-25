@@ -13,8 +13,8 @@ router.get('/get', async (req, res) => {
     try {
         const allPosts = await Post.find()
             .populate('author', 'nickname username avatar')
-            .populate('university', 'name address description');
-
+            .populate('university', 'name address description')
+            .sort({ createdAt: -1 });
         const postsWithComments = await Promise.all(
             allPosts.map(async (post) => {
                 const commentCount = await Comment.countDocuments({ post_id: post._id });

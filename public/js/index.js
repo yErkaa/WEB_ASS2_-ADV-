@@ -1,37 +1,102 @@
+function showModalWithCancel(message, input = false, callback = null, cancelCallback = null) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <p>${message}</p>
+            ${input ? '<textarea id="modalInput"></textarea>' : ''}
+            <div class="modal-buttons">
+                <button id="modalCancelButton" class="cancel-btn">Отмена</button>
+                <button id="modalOkButton" class="ok-btn">OK</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalInput = document.getElementById('modalInput');
+    const cancelButton = document.getElementById('modalCancelButton');
+    const okButton = document.getElementById('modalOkButton');
+
+    cancelButton.addEventListener('click', () => {
+        if (cancelCallback) cancelCallback();
+        document.body.removeChild(modal); // Закрыть модальное окно
+    });
+
+    okButton.addEventListener('click', () => {
+        if (input && callback) {
+            callback(modalInput.value);
+        } else if (callback) {
+            callback();
+        }
+        document.body.removeChild(modal); // Закрыть модальное окно
+    });
+}
+
+function showModalEditWithCancel(title, content, callback, cancelCallback) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <label for="modalTitle">Введите новый заголовок:</label>
+            <input id="modalTitle" type="text" value="${title}" class="modal-input-title">
+
+            <label for="modalContent">Введите новый текст поста:</label>
+            <textarea id="modalContent" class="modal-input-content">${content}</textarea>
+
+            <div class="modal-buttons">
+                <button id="modalCancelButton" class="cancel-btn">Отмена</button>
+                <button id="modalOkButton" class="ok-btn">OK</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const cancelButton = document.getElementById('modalCancelButton');
+    const okButton = document.getElementById('modalOkButton');
+
+    cancelButton.addEventListener('click', () => {
+        if (cancelCallback) cancelCallback();
+        document.body.removeChild(modal); // Закрыть модальное окно
+    });
+
+    okButton.addEventListener('click', () => {
+        const newTitle = document.getElementById('modalTitle').value.trim();
+        const newContent = document.getElementById('modalContent').value.trim();
+        if (newTitle && newContent && callback) {
+            callback(newTitle, newContent);
+        }
+        document.body.removeChild(modal); // Закрыть модальное окно
+    });
+}
+
+// Основной код
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        alert('Вы не авторизованы. Перенаправляем на страницу входа...');
-        window.location.href = 'login.html';
+        showModalWithCancel('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
+            window.location.href = 'login.html';
+        });
         return;
     }
-    console.log('Токен загружен.');
 
     const universityFilter = document.getElementById('universityFilter');
     const postsContainer = document.getElementById('postsContainer');
     let currentUser = null;
 
-    // Получение текущего пользователя
     const getCurrentUser = async () => {
         try {
             const response = await fetch('http://localhost:5000/auth/user', {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (response.ok) {
-                const user = await response.json();
-                console.log('Пользователь авторизован.');
-                return user;
-            } else {
-                throw new Error('Не удалось загрузить информацию о пользователе');
-            }
+            if (!response.ok) throw new Error('Не удалось загрузить информацию о пользователе');
+            return await response.json();
         } catch (err) {
-            console.error('Ошибка получения пользователя.');
-            alert('Ошибка получения пользователя.');
+            console.error('Ошибка получения пользователя:', err);
+            showModalWithCancel('Не удалось загрузить информацию о пользователе.');
             return null;
         }
     };
 
-    // Загрузка университетов
     const loadUniversities = async () => {
         try {
             const response = await fetch('http://localhost:5000/universities', {
@@ -40,10 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('Ошибка загрузки университетов');
             const universities = await response.json();
 
-            console.log('Университеты успешно загружены.');
-
             universityFilter.innerHTML = '';
-
             const allOption = document.createElement('option');
             allOption.value = 'all';
             allOption.textContent = 'Все университеты';
@@ -51,19 +113,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             universities.forEach((university) => {
                 const option = document.createElement('option');
-                option.value = university._id; // Используем ID университета
+                option.value = university._id;
                 option.textContent = university.name;
                 universityFilter.appendChild(option);
             });
         } catch (err) {
-            console.error('Ошибка загрузки университетов.');
-            alert('Не удалось загрузить список университетов.');
+            console.error('Ошибка загрузки университетов:', err);
+            showModalWithCancel('Не удалось загрузить список университетов.');
         }
     };
 
-    // Загрузка постов
     const loadPosts = async (universityId = 'all') => {
-        postsContainer.innerHTML = ''; // Очищаем контейнер с постами
+        postsContainer.innerHTML = '';
         try {
             const response = await fetch('http://localhost:5000/posts/get', {
                 headers: { Authorization: `Bearer ${token}` },
@@ -71,54 +132,44 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('Ошибка загрузки постов');
             const posts = await response.json();
 
-            console.log('Посты успешно загружены.');
-
-            const filteredPosts = universityId === 'all' ? posts : posts.filter((post) => post.university?._id === universityId);
+            const filteredPosts =
+                universityId === 'all'
+                    ? posts
+                    : posts.filter((post) => post.university?._id === universityId);
 
             filteredPosts.forEach((post) => {
                 const postElement = document.createElement('div');
-                postElement.className = 'post';
+                postElement.className = 'card';
 
-                const authorName = post.author?.nickname || post.author?.username || 'Неизвестный автор';
-                const universityName = post.university?.name || 'Неизвестный университет';
-                const universityAddress = post.university?.address || 'Адрес не указан';
-                const universityDescription = post.university?.description || 'Описание отсутствует';
+                const isAuthor = post.author?._id === currentUser._id;
 
                 postElement.innerHTML = `
                 <h3>${post.title}</h3>
                 <p>${post.content}</p>
-                <p>Университет: ${universityName}</p>
-                <p>Адрес: ${universityAddress}</p>
-                <p>Описание: ${universityDescription}</p>
-                <p>Оценка: ${post.rating}</p>
-                <p>Автор: ${authorName}</p>
-                <p>Комментарии: ${post.commentCount || 0}</p>
-                <p>Лайков: <span class="likes-count" data-id="${post._id}">${post.likes ? post.likes.length : 0}</span></p>
-                <button class="like-post" data-id="${post._id}">
-                    ${post.likes && post.likes.includes(currentUser._id) ? 'Убрать лайк' : 'Лайкнуть'}
-                </button>
-
-
-
-                ${
-                    post.author && post.author._id === currentUser._id
-                        ? `<button class="edit-post" data-id="${post._id}">Редактировать</button>
-                           <button class="delete-post" data-id="${post._id}">Удалить</button>`
+                <p>Университет: ${post.university?.name || 'Неизвестный университет'}</p>
+                <p>Автор: ${post.author?.nickname || post.author?.username || 'Неизвестный автор'}</p>
+                <p>Лайков: <span class="likes-count" data-id="${post._id}">${post.likes?.length || 0}</span></p>
+                <p>Комментариев: ${post.commentCount || 0}</p>
+                <div class="post-buttons">
+                    <button class="like-post ${post.likes?.includes(currentUser._id) ? 'liked' : ''}" data-id="${post._id}">Лайк</button>
+                    <button class="comment-btn" onclick="location.href='comments_view.html?postId=${post._id}'">💬 Комментарии</button>
+                    ${
+                    isAuthor
+                        ? `<button class="edit-post small-btn" data-id="${post._id}" data-content="${post.content}" data-title="${post.title}">✏️</button>
+                           <button class="delete-post small-btn" data-id="${post._id}">❌</button>`
                         : ''
                 }
-                <button onclick="location.href='comments_view.html?postId=${post._id}'">Комментарии</button>
-                <p><small>Создан: ${new Date(post.createdAt).toLocaleString()}</small></p>
+                </div>
             `;
                 postsContainer.appendChild(postElement);
             });
-
 
             if (filteredPosts.length === 0) {
                 postsContainer.innerHTML = '<p>Постов нет.</p>';
             }
         } catch (err) {
-            console.error('Ошибка загрузки постов.');
-            alert('Не удалось загрузить посты.');
+            console.error('Ошибка загрузки постов:', err);
+            showModalWithCancel('Не удалось загрузить посты.');
         }
     };
 
@@ -132,77 +183,68 @@ document.addEventListener('DOMContentLoaded', async () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                if (!response.ok) throw new Error('Ошибка при переключении лайка');
+                if (!response.ok) throw new Error('Не удалось переключить лайк');
+                const { likesCount, liked } = await response.json();
 
-                const { likesCount, message } = await response.json();
-                alert(message);
-
-                // Обновляем количество лайков и текст кнопки
+                e.target.classList.toggle('liked', liked);
                 const likesCountElement = document.querySelector(`.likes-count[data-id="${postId}"]`);
-                likesCountElement.textContent = likesCount;
-
-                e.target.textContent = message === 'Лайк добавлен' ? 'Убрать лайк' : 'Лайкнуть';
+                if (likesCountElement) likesCountElement.textContent = likesCount;
             } catch (err) {
                 console.error('Ошибка при переключении лайка:', err);
-                alert('Не удалось переключить лайк.');
+                showModalWithCancel('Не удалось переключить лайк.');
             }
         }
-    });
 
+        if (e.target.classList.contains('delete-post')) {
+            const postId = e.target.dataset.id;
 
+            showModalWithCancel('Вы уверены, что хотите удалить этот пост?', false, async () => {
+                try {
+                    const response = await fetch(`http://localhost:5000/posts/${postId}`, {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
 
-
-    // Обработка изменения выбора университета
-    universityFilter.addEventListener('change', () => {
-        const selectedUniversityId = universityFilter.value;
-        loadPosts(selectedUniversityId);
-    });
-
-    postsContainer.addEventListener('click', async (e) => {
-        const postId = e.target.dataset.id;
+                    if (response.ok) {
+                        showModalWithCancel('Пост успешно удалён.', false, loadPosts);
+                    } else {
+                        const error = await response.json();
+                        showModalWithCancel(`Ошибка удаления поста: ${error.error}`);
+                    }
+                } catch (err) {
+                    console.error('Ошибка при удалении поста:', err);
+                    showModalWithCancel('Не удалось удалить пост.');
+                }
+            });
+        }
 
         if (e.target.classList.contains('edit-post')) {
-            const newTitle = prompt('Введите новый заголовок:');
-            const newContent = prompt('Введите новый отзыв:');
-            const newRating = prompt('Введите новую оценку (1-5):');
-            try {
-                const response = await fetch(`http://localhost:5000/posts/${postId}`, {
-                    method: 'PUT',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ title: newTitle, content: newContent, rating: newRating }),
-                });
-                if (response.ok) {
-                    alert('Пост успешно обновлён!');
-                    loadPosts(universityFilter.value);
-                } else {
-                    const error = await response.json();
-                    alert(`Ошибка обновления поста: ${error.error}`);
+            const postId = e.target.dataset.id;
+            const currentTitle = e.target.dataset.title;
+            const currentContent = e.target.dataset.content;
+
+            showModalEditWithCancel(currentTitle, currentContent, async (newTitle, newContent) => {
+                try {
+                    const response = await fetch(`http://localhost:5000/posts/${postId}`, {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ title: newTitle, content: newContent }),
+                    });
+
+                    if (response.ok) {
+                        showModalWithCancel('Пост успешно обновлён.', false, loadPosts);
+                    } else {
+                        const error = await response.json();
+                        showModalWithCancel(`Ошибка обновления поста: ${error.error}`);
+                    }
+                } catch (err) {
+                    console.error('Ошибка при обновлении поста:', err);
+                    showModalWithCancel('Не удалось обновить пост.');
                 }
-            } catch (err) {
-                console.error('Ошибка:', err);
-                alert('Не удалось обновить пост.');
-            }
-        } else if (e.target.classList.contains('delete-post')) {
-            if (!confirm('Вы уверены, что хотите удалить этот пост?')) return;
-            try {
-                const response = await fetch(`http://localhost:5000/posts/${postId}`, {
-                    method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (response.ok) {
-                    alert('Пост успешно удалён!');
-                    loadPosts(universityFilter.value);
-                } else {
-                    const error = await response.json();
-                    alert(`Ошибка удаления поста: ${error.error}`);
-                }
-            } catch (err) {
-                console.error('Ошибка:', err);
-                alert('Не удалось удалить пост.');
-            }
+            });
         }
     });
 
