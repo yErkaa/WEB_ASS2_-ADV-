@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-Factor Authentication</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<header>
+    <h1>Learning Places</h1>
+    <nav>
+        <a href="../html/index.html">Главная</a>
+        <a href="../html/login.html">Вход</a>
+    </nav>
+</header>
+<main>
+    <form id="send-code-form">
+        <h2>Двухфакторная аутентификация</h2>
+        <p>Для завершения входа нажмите кнопку ниже, чтобы отправить код на вашу почту.</p>
+        <button type="button" id="send-code-button">Отправить код</button>
+    </form>
+
+    <form id="verify-code-form" style="margin-top: 20px;">
+        <label for="code">Введите код:</label>
+        <input type="text" id="code" name="code" placeholder="Введите полученный код" required>
+        <button type="button" id="verify-code-button">Проверить код</button>
+    </form>
+
+    <div id="message" style="margin-top: 20px; color: red;"></div>
+</main>
+<footer>
+    <p>© 2024 Learning Places</p>
+</footer>
+
+<script>
+    document.getElementById('send-code-button').addEventListener('click', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        console.log(email);
+
+        if (!email) {
+            document.getElementById('message').textContent = 'Email отсутствует. Повторите регистрацию.';
+            return;
+        }
+
+        try {
+            const response = await fetch('/auth/send-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }) // Передаём email
+            });
+            const data = await response.json();
+            document.getElementById('message').textContent = data.message || 'Код отправлен.';
+        } catch (err) {
+            console.error('Ошибка при отправке кода:', err);
+            document.getElementById('message').textContent = 'Ошибка при отправке кода. Попробуйте снова.';
+        }
+    });
+
+    document.getElementById('verify-code-button').addEventListener('click', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        const code = document.getElementById('code').value.trim();
+
+        if (!email || !code) {
+            document.getElementById('message').textContent = 'Пожалуйста, введите email и код.';
+            return;
+        }
+
+        try {
+            const response = await fetch('/auth/verify-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                // Сохранение токена в localStorage
+                localStorage.setItem('token', data.token);
+                alert('Код успешно подтверждён. Добро пожаловать!');
+                window.location.href = '../html/index.html'; // Перенаправляем на главную страницу
+            } else {
+                document.getElementById('message').textContent = data.message || 'Ошибка проверки кода.';
+            }
+        } catch (err) {
+            console.error('Ошибка при проверке кода:', err);
+            document.getElementById('message').textContent = 'Ошибка при проверке кода. Попробуйте снова.';
+        }
+    });
+
+
+</script>
+</body>
+</html>

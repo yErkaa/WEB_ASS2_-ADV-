@@ -78,16 +78,21 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             body: formData,
         });
 
+        const result = await response.json();
         if (response.ok) {
-            showModal('Регистрация успешна! Перенаправляем на страницу входа...', false, () => {
-                window.location.href = 'login.html';
-            });
+            if (result.redirect) {
+                // Перенаправление на страницу двухфакторной аутентификации
+                window.location.href = result.redirect;
+            } else {
+                showModal('Регистрация успешна! Перенаправляем на страницу входа...', false, () => {
+                    window.location.href = 'login.html';
+                });
+            }
         } else {
-            const error = await response.json();
-            if (error.error === 'Пользователь с таким email уже зарегистрирован') {
+            if (result.error === 'Пользователь с таким email уже зарегистрирован') {
                 showModal('Пользователь с таким email уже зарегистрирован. Используйте другой email.');
             } else {
-                showModal(`Ошибка регистрации: ${error.error}`);
+                showModal(`Ошибка регистрации: ${result.error}`);
             }
         }
     } catch (err) {
@@ -95,6 +100,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         showModal('Не удалось зарегистрироваться. Попробуйте снова.');
     }
 });
+
 
 
 // Обновление имени файла при выборе

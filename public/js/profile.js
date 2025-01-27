@@ -6,20 +6,19 @@ function showModal(message, input = false, callback = null) {
         <div class="modal-content">
             <p>${message}</p>
             ${input ? '<textarea id="modalInput"></textarea>' : ''}
-            <button id="modalOkButton">OK</button>
+            <div class="modal-buttons">
+                <button id="modalOkButton" class="ok-btn">OK</button>
+            </div>
         </div>
     `;
     document.body.appendChild(modal);
 
-    const modalInput = document.getElementById('modalInput');
     const okButton = document.getElementById('modalOkButton');
     okButton.addEventListener('click', () => {
-        if (input && callback) {
-            callback(modalInput.value);
-        } else if (callback) {
-            callback();
+        if (callback) {
+            callback(); // Выполняем действие при нажатии "ОК"
         }
-        document.body.removeChild(modal);
+        document.body.removeChild(modal); // Закрываем модальное окно
     });
 }
 
@@ -28,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!token) {
         showModal('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
-            window.location.href = 'login.html';
+            window.location.href = 'login.html'; // Перенаправление на страницу входа
         });
         return;
     }
@@ -48,17 +47,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     : 'default-avatar.png';
             } else {
                 const error = await response.json();
-                showModal(`Ошибка загрузки профиля: ${error.error}`);
-                throw new Error(error.error || 'Не удалось загрузить профиль');
+                showModal(`Ошибка загрузки профиля: ${error.error}`, false, () => {
+                    window.location.href = 'login.html'; // Перенаправление на страницу входа
+                });
             }
         } catch (err) {
             console.error('Ошибка загрузки профиля:', err);
             showModal('Ошибка загрузки профиля. Перенаправляем на страницу входа...', false, () => {
-                window.location.href = 'login.html';
+                window.location.href = 'login.html'; // Перенаправление на страницу входа
             });
         }
     };
 
+    // Обработчик кнопки "Обновить никнейм"
     document.getElementById('updateNicknameButton').addEventListener('click', async () => {
         const newNickname = document.getElementById('nickname').value.trim();
 
@@ -78,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (response.ok) {
-                showModal('Никнейм успешно обновлен', false, loadUserProfile);
+                showModal('Никнейм успешно обновлен.', false, loadUserProfile);
             } else {
                 const error = await response.json();
                 showModal(`Ошибка обновления никнейма: ${error.error}`);
@@ -89,36 +90,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Обработчик кнопки "Выход"
     document.getElementById('logoutButton').addEventListener('click', () => {
         localStorage.removeItem('token');
         showModal('Вы успешно вышли из аккаунта.', false, () => {
-            window.location.href = 'login.html';
+            window.location.href = 'login.html'; // Перенаправление на страницу входа
         });
     });
 
+    // Обработчик кнопки "Удалить аккаунт"
     document.getElementById('deleteAccountButton').addEventListener('click', () => {
-        showModal('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.', false, async () => {
-            try {
-                const response = await fetch('http://localhost:5000/auth/user', {
-                    method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (response.ok) {
-                    showModal('Аккаунт успешно удалён.', false, () => {
-                        localStorage.removeItem('token');
-                        window.location.href = 'register.html';
+        showModal(
+            'Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.',
+            false,
+            async () => {
+                try {
+                    const response = await fetch('http://localhost:5000/auth/user', {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` },
                     });
-                } else {
-                    const error = await response.json();
-                    showModal(`Ошибка удаления аккаунта: ${error.error}`);
+
+                    if (response.ok) {
+                        showModal('Аккаунт успешно удалён.', false, () => {
+                            localStorage.removeItem('token');
+                            window.location.href = 'register.html'; // Перенаправление на регистрацию
+                        });
+                    } else {
+                        const error = await response.json();
+                        showModal(`Ошибка удаления аккаунта: ${error.error}`);
+                    }
+                } catch (err) {
+                    console.error('Ошибка удаления аккаунта:', err);
+                    showModal('Не удалось удалить аккаунт.');
                 }
-            } catch (err) {
-                console.error('Ошибка удаления аккаунта:', err);
-                showModal('Не удалось удалить аккаунт.');
             }
-        });
+        );
     });
 
+    // Загрузка профиля при загрузке страницы
     await loadUserProfile();
 });

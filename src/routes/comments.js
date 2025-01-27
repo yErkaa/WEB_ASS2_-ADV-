@@ -9,6 +9,15 @@ const ObjectId = mongoose.Types.ObjectId;
 
 // Получение всех комментариев к посту
 router.get('/:post_id', async (req, res) => {
+    const { postId } = req.params;
+    try {
+        const comments = await Comment.find({ post: postId }).populate('author');
+        res.json(comments);
+    } catch (err) {
+        console.error('Ошибка при получении комментариев:', err);
+        res.status(500).json({ error: 'Не удалось получить комментарии' });
+    }
+
     try {
         const { post_id } = req.params;
 

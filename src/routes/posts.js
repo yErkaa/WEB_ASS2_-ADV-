@@ -11,6 +11,7 @@ const ObjectId = mongoose.Types.ObjectId;
 // Получение всех постов с комментариями и лайками
 router.get('/get', async (req, res) => {
     try {
+
         const allPosts = await Post.find()
             .populate('author', 'nickname username avatar')
             .populate('university', 'name address description')

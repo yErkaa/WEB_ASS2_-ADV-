@@ -71,24 +71,36 @@ function showModalEditWithCancel(title, content, callback, cancelCallback) {
 
 // Основной код
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM полностью загружен.');
     const token = localStorage.getItem('token');
     if (!token) {
+        console.warn('Токен отсутствует. Перенаправляем на страницу входа.');
         showModalWithCancel('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
             window.location.href = 'login.html';
         });
         return;
     }
 
+    if (!token) {
+        alert('Вы не авторизованы. Перенаправляем на страницу входа.');
+        window.location.href = 'login.html';
+    }
+
+
     const universityFilter = document.getElementById('universityFilter');
     const postsContainer = document.getElementById('postsContainer');
     let currentUser = null;
 
     const getCurrentUser = async () => {
+        console.log('Загрузка информации о текущем пользователе...');
         try {
             const response = await fetch('http://localhost:5000/auth/user', {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) throw new Error('Не удалось загрузить информацию о пользователе');
+            const user = await response.json();
+            console.log('Информация о пользователе загружена:', user);
+            return user;
             return await response.json();
         } catch (err) {
             console.error('Ошибка получения пользователя:', err);
@@ -98,12 +110,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const loadUniversities = async () => {
+        console.log('Загрузка списка университетов...');
         try {
             const response = await fetch('http://localhost:5000/universities', {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) throw new Error('Ошибка загрузки университетов');
             const universities = await response.json();
+            console.log('Список университетов:', universities);
 
             universityFilter.innerHTML = '';
             const allOption = document.createElement('option');
@@ -246,6 +260,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
+    });
+
+    universityFilter.addEventListener('change', () => {
+        const universityId = universityFilter.value;
+        console.log(`Фильтрация по университету ID: ${universityId}`);
+        loadPosts(universityId);
     });
 
     currentUser = await getCurrentUser();

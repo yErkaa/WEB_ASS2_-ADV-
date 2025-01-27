@@ -22,19 +22,23 @@ function showModal(message, input = false, callback = null) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Загрузка списка университетов...');
     try {
         const response = await fetch('http://localhost:5000/universities');
-        if (!response.ok) throw new Error('Ошибка загрузки университетов');
+        if (!response.ok) throw new Error(`Ошибка загрузки университетов: ${response.statusText}`);
         const universities = await response.json();
+        console.log('Университеты загружены:', universities);
 
-        const universitiesList = document.getElementById('universitiesList');
+        const universityFilter = document.getElementById('universityFilter');
         universities.forEach(university => {
-            const listItem = document.createElement('li');
-            listItem.textContent = university;
-            universitiesList.appendChild(listItem);
+            const option = document.createElement('option');
+            option.value = university._id;
+            option.textContent = university.name;
+            universityFilter.appendChild(option);
         });
     } catch (err) {
         console.error('Ошибка:', err);
         showModal('Не удалось загрузить список университетов.');
     }
 });
+
