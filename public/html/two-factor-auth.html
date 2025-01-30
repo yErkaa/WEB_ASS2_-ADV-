@@ -9,22 +9,23 @@
 <body>
 <header>
     <h1>Learning Places</h1>
-    <nav>
-        <a href="../html/index.html">Главная</a>
-        <a href="../html/login.html">Вход</a>
-    </nav>
+<!--    <nav>-->
+<!--        <a href="../html/index.html">Главная</a>-->
+<!--        <a href="../html/login.html">Вход</a>-->
+<!--    </nav>-->
 </header>
 <main>
     <form id="send-code-form">
-        <h2>Двухфакторная аутентификация</h2>
-        <p>Для завершения входа нажмите кнопку ниже, чтобы отправить код на вашу почту.</p>
-        <button type="button" id="send-code-button">Отправить код</button>
+        <h2>Подтверждение электронной почты</h2>
+        <p>На указанную почту был отправлен код подтверждения! Введите его для подтверждения вашей электронной почты.</p>
     </form>
 
     <form id="verify-code-form" style="margin-top: 20px;">
         <label for="code">Введите код:</label>
         <input type="text" id="code" name="code" placeholder="Введите полученный код" required>
         <button type="button" id="verify-code-button">Проверить код</button>
+        <button type="button" id="send-code-button">Отправить код</button>
+
     </form>
 
     <div id="message" style="margin-top: 20px; color: red;"></div>
@@ -34,10 +35,32 @@
 </footer>
 
 <script>
-    document.getElementById('send-code-button').addEventListener('click', async () => {
+
+    function startCooldown(button, seconds) {
+        button.disabled = true;
+        let remainingTime = seconds;
+
+        const interval = setInterval(() => {
+            if (remainingTime <= 0) {
+                clearInterval(interval);
+                button.disabled = false;
+                button.textContent = 'Отправить код';
+
+                button.textContent = `Повторно отправить код можно через: ${remainingTime}`; // Показываем обратный отсчет
+                remainingTime--;
+            }
+        }, 1000);
+    }
+
+
+    const sendCodeButton = document.getElementById('send-code-button');
+
+    // При загрузке страницы запускаем таймер
+    startCooldown(sendCodeButton, 60);
+
+    sendCodeButton.addEventListener('click', async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const email = urlParams.get('email');
-        console.log(email);
 
         if (!email) {
             document.getElementById('message').textContent = 'Email отсутствует. Повторите регистрацию.';
@@ -50,13 +73,18 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }) // Передаём email
             });
+
             const data = await response.json();
             document.getElementById('message').textContent = data.message || 'Код отправлен.';
+
+            // Запускаем таймер после отправки кода
+            startCooldown(sendCodeButton, 60);
         } catch (err) {
             console.error('Ошибка при отправке кода:', err);
             document.getElementById('message').textContent = 'Ошибка при отправке кода. Попробуйте снова.';
         }
     });
+
 
     document.getElementById('verify-code-button').addEventListener('click', async () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -79,8 +107,9 @@
             if (response.ok && data.success) {
                 // Сохранение токена в localStorage
                 localStorage.setItem('token', data.token);
-                alert('Код успешно подтверждён. Добро пожаловать!');
-                window.location.href = '../html/index.html'; // Перенаправляем на главную страницу
+                showModal('Код успешно подтверждён. Добро пожаловать!', false, () => {
+                    window.location.href = '../html/index.html';
+                });
             } else {
                 document.getElementById('message').textContent = data.message || 'Ошибка проверки кода.';
             }
@@ -90,7 +119,30 @@
         }
     });
 
+    // Функция для отображения модального окна
+    function showModal(message, input = false, callback = null) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+        <div class="modal-content">
+            <p>${message}</p>
+            ${input ? '<textarea id="modalInput"></textarea>' : ''}
+            <button id="modalOkButton">OK</button>
+        </div>
+    `;
+        document.body.appendChild(modal);
 
+        const modalInput = document.getElementById('modalInput');
+        const okButton = document.getElementById('modalOkButton');
+        okButton.addEventListener('click', () => {
+            if (input && callback) {
+                callback(modalInput.value);
+            } else if (callback) {
+                callback();
+            }
+            document.body.removeChild(modal);
+        });
+    }
 </script>
 </body>
 </html>

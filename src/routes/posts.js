@@ -4,6 +4,7 @@ const Post = require('../models/Post');
 const University = require('../models/University');
 const authMiddleware = require('../middleware/authMiddleware');
 const Comment = require('../models/Comment');
+const rateLimitMiddleware = require('../middleware/rateLimitMiddleware');
 
 const router = express.Router();
 const ObjectId = mongoose.Types.ObjectId;
@@ -35,7 +36,7 @@ router.get('/get', async (req, res) => {
 });
 
 // Создание нового поста
-router.post('/create', authMiddleware, async (req, res) => {
+router.post('/create', authMiddleware, rateLimitMiddleware, async (req, res) => {
     const { university, title, review, rating } = req.body;
 
     if (!university || !title || !review || !rating) {

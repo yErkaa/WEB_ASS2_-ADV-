@@ -24,7 +24,7 @@ function showModal(message, input = false, callback = null) {
 let map;
 let markers = [];
 
-// Инициализация карты
+
 function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 51.128, lng: 71.430 },

@@ -30,6 +30,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
+    if (!username || !password) {
+        alert('Введите email и пароль.');
+        return;
+    }
+
+
     try {
         const response = await fetch('http://localhost:5000/auth/login', {
             method: 'POST',
