@@ -28,6 +28,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+
 async function sendEmail(to, subject, text) {
     try {
         await transporter.sendMail({
@@ -52,13 +53,41 @@ const storage = multer.diskStorage({
     },
 });
 
-const verifyToken = (authHeader) => {
-    if (!authHeader) throw new Error('Нет токена, доступ запрещён');
+const verifyToken = async (req, res, next) => {
+    if (!req.headers) {
+        console.log('Ошибка: req.headers не определён');
+        return res.status(401).json({ error: 'Ошибка сервера: заголовки не получены' });
+    }
+
+    const authHeader = req.headers['authorization'];
+    console.log('Заголовок Authorization:', authHeader);
+
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Нет токена, доступ запрещён' });
+    }
+
     const token = authHeader.split(' ')[1];
-    return jwt.verify(token, JWT_SECRET);
+    if (!token) {
+        return res.status(401).json({ error: 'Нет токена, доступ запрещён' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.activeToken !== token) {
+            return res.status(401).json({ error: 'Сессия была завершена. Войдите снова.' });
+        }
+
+        req.user = user;
+        next();
+    } catch (err) {
+        console.error('Ошибка проверки токена:', err);
+        res.status(401).json({ error: 'Неверный или просроченный токен' });
+    }
 };
 
-// Регистрация пользователя
+
 router.post('/register', upload.single('avatar'), async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -67,16 +96,13 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
             return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
         }
 
-        // Проверка существующего пользователя
         const existingUser = await User.findOne({ username });
         if (existingUser) {
             return res.status(400).json({ error: 'Пользователь с таким email уже зарегистрирован' });
         }
 
-        // Хэширование пароля
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Обработка аватара
         let avatarPath = '';
         if (req.file) {
             const resizedImagePath = `uploads/resized-${req.file.filename}`;
@@ -88,7 +114,6 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
             avatarPath = resizedImagePath.replace(/\\/g, '/');
         }
 
-        // Генерация кода для двухфакторной аутентификации
         const twoFactorCode = crypto.randomInt(100000, 999999).toString();
         const user = new User({
             username,
@@ -98,7 +123,6 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
             twoFactorExpires: new Date(Date.now() + 10 * 60 * 1000),
         });
 
-        // Сохранение пользователя и отправка кода на email
         await user.save();
         await sendEmail(
             user.username,
@@ -117,8 +141,6 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
 });
 
 
-
-// Вход пользователя
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -138,6 +160,10 @@ router.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
+
+        user.activeToken = token;
+        await user.save();
+
         res.json({ token });
     } catch (err) {
         console.error('Ошибка при входе:', err);
@@ -145,12 +171,20 @@ router.post('/login', async (req, res) => {
     }
 });
 
+router.post('/logout', verifyToken, async (req, res) => {
+    try {
+        req.user.activeToken = null;
+        await req.user.save();
+        res.json({ message: 'Вы успешно вышли из аккаунта' });
+    } catch (err) {
+        console.error('Ошибка при выходе:', err);
+        res.status(500).json({ error: 'Ошибка при выходе' });
+    }
+});
 
 
 router.delete('/user', async (req, res) => {
     try {
-        const authHeader = req.header('Authorization');
-        const decoded = verifyToken(authHeader);
 
         const user = await User.findByIdAndDelete(decoded.id);
         if (!user) {
@@ -166,15 +200,9 @@ router.delete('/user', async (req, res) => {
 });
 
 
-router.get('/user', async (req, res) => {
+router.get('/user', verifyToken, async (req, res) => {
     try {
-        const authHeader = req.header('Authorization');
-        const decoded = verifyToken(authHeader);
-        if (!authHeader) return res.status(401).json({ error: 'Токен отсутствует' });
-
-        const token = authHeader.split(' ')[1];
-
-        const user = await User.findById(decoded.id).select('-password');
+        const user = await User.findById(req.user._id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
@@ -190,8 +218,6 @@ router.get('/user', async (req, res) => {
 
 router.put('/user', async (req, res) => {
     try {
-        const authHeader = req.header('Authorization');
-        const decoded = verifyToken(authHeader);
         const { nickname } = req.body;
 
         if (!nickname) {
@@ -217,11 +243,6 @@ router.put('/user', async (req, res) => {
 });
 
 
-module.exports = router;
-
-
-
-// Отправка кода
 router.post('/send-code', async (req, res) => {
     try {
         const { email } = req.body;
@@ -267,11 +288,10 @@ router.post('/verify-code', async (req, res) => {
         }
 
         if (user.twoFactorCode === code && user.twoFactorExpires > new Date()) {
-            user.twoFactorCode = null; // Сбрасываем код после успешной проверки
+            user.twoFactorCode = null;
             user.twoFactorExpires = null;
             await user.save();
 
-            // Генерация токена
             const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
 
             return res.status(200).json({ success: true, message: 'Код верный.', token });

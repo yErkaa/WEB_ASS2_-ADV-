@@ -1,4 +1,3 @@
-// Функция для отображения модального окна
 function showModal(message, input = false, callback = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -21,6 +20,33 @@ function showModal(message, input = false, callback = null) {
     });
 }
 
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModal('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModal('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
+
 let map;
 let markers = [];
 
@@ -36,8 +62,9 @@ function initMap() {
     document.getElementById("universityDropdown").addEventListener("change", handleUniversityChange);
 }
 
-// Загрузка университетов с сервера
 async function loadUniversitiesAndAddMarkers() {
+    if (!(await checkDatabaseStatus())) return;
+
     try {
         const response = await fetch('http://localhost:5000/universities');
         if (!response.ok) throw new Error('Ошибка загрузки университетов');
@@ -51,8 +78,8 @@ async function loadUniversitiesAndAddMarkers() {
     }
 }
 
-// Заполнение выпадающего списка
 function populateUniversityDropdown(universities) {
+
     const dropdown = document.getElementById("universityDropdown");
     dropdown.innerHTML = '';
 
@@ -67,10 +94,11 @@ function populateUniversityDropdown(universities) {
         option.textContent = university.name;
         dropdown.appendChild(option);
     });
+
 }
 
-// Добавление маркеров на карту
 function addMarkers(universities) {
+
     const geocoder = new google.maps.Geocoder();
 
     markers.forEach(marker => marker.setMap(null));
@@ -95,7 +123,6 @@ function addMarkers(universities) {
     });
 }
 
-// Обработка изменений в выпадающем списке
 function handleUniversityChange(event) {
     const selectedUniversity = event.target.value;
 

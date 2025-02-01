@@ -7,17 +7,7 @@ const authMiddleware = require('../middleware/authMiddleware'); // Middleware д
 const router = express.Router();
 const ObjectId = mongoose.Types.ObjectId;
 
-// Получение всех комментариев к посту
 router.get('/:post_id', async (req, res) => {
-    const { postId } = req.params;
-    try {
-        const comments = await Comment.find({ post: postId }).populate('author');
-        res.json(comments);
-    } catch (err) {
-        console.error('Ошибка при получении комментариев:', err);
-        res.status(500).json({ error: 'Не удалось получить комментарии' });
-    }
-
     try {
         const { post_id } = req.params;
 
@@ -26,7 +16,7 @@ router.get('/:post_id', async (req, res) => {
         }
 
         const comments = await Comment.find({ post_id })
-            .populate('author_id', 'nickname username avatar') // Подгружаем данные автора
+            .populate('author_id', 'nickname username avatar')
             .sort({ createdAt: -1 });
 
         res.json(comments);
@@ -36,7 +26,6 @@ router.get('/:post_id', async (req, res) => {
     }
 });
 
-// Создание нового комментария
 router.post('/create', authMiddleware, async (req, res) => {
     const { post_id, content } = req.body;
 
@@ -68,7 +57,6 @@ router.post('/create', authMiddleware, async (req, res) => {
 });
 
 
-// Обновление комментария
 router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
@@ -97,7 +85,6 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Удаление комментария
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;

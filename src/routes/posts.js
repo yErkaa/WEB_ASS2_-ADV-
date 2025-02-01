@@ -9,7 +9,6 @@ const rateLimitMiddleware = require('../middleware/rateLimitMiddleware');
 const router = express.Router();
 const ObjectId = mongoose.Types.ObjectId;
 
-// Получение всех постов с комментариями и лайками
 router.get('/get', async (req, res) => {
     try {
 
@@ -35,7 +34,6 @@ router.get('/get', async (req, res) => {
     }
 });
 
-// Создание нового поста
 router.post('/create', authMiddleware, rateLimitMiddleware, async (req, res) => {
     const { university, title, review, rating } = req.body;
 
@@ -65,7 +63,6 @@ router.post('/create', authMiddleware, rateLimitMiddleware, async (req, res) => 
     }
 });
 
-// Получение поста и комментариев
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -93,7 +90,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Переключение лайка
 router.post('/:id/toggle-like', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;

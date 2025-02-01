@@ -1,11 +1,9 @@
 const mongoose = require('mongoose');
 
-// Определение схемы для университета
 const UniversitySchema = new mongoose.Schema({
-    name: { type: String, required: true, unique: true, trim: true }, // Название университета
-    address: { type: String, required: true }, // Адрес университета
-    description: { type: String, default: "Описание отсутствует" }, // Краткое описание
-}, { timestamps: true }); // Добавляет createdAt и updatedAt
+    name: { type: String, required: true, unique: true, trim: true },
+    address: { type: String, required: true },
+    description: { type: String, default: "Описание отсутствует" },
+}, { timestamps: true });
 
-// Экспорт модели
 module.exports = mongoose.model('University', UniversitySchema);

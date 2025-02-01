@@ -1,4 +1,3 @@
-// Функция для отображения модального окна
 function showModal(message, input = false, callback = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -23,8 +22,35 @@ function showModal(message, input = false, callback = null) {
     });
 }
 
-// Проверка пароля на соответствие требованиям
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModal('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModal('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
+
 function validatePassword(password) {
+
     const hasUppercase = /[A-Z]/.test(password);
     const hasLowercase = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
@@ -50,8 +76,8 @@ function validatePassword(password) {
     return null;
 }
 
-// Обработка формы регистрации
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    if (!(await checkDatabaseStatus())) return;
     e.preventDefault();
 
     const username = document.getElementById('username').value.trim();
@@ -81,7 +107,6 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         const result = await response.json();
         if (response.ok) {
             if (result.redirect) {
-                // Перенаправление на страницу двухфакторной аутентификации
                 window.location.href = result.redirect;
             } else {
                 showModal('Регистрация успешна! Перенаправляем на страницу входа...', false, () => {
@@ -103,20 +128,18 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
 
 
-// Обновление имени файла при выборе
 document.getElementById('avatar').addEventListener('change', function () {
     const fileName = this.files.length > 0 ? this.files[0].name : 'Файл не выбран';
     document.getElementById('file-name').textContent = fileName;
 });
 
-// Добавление функционала "глазика" для отображения пароля
 const passwordInput = document.getElementById('password');
 const togglePassword = document.getElementById('togglePassword');
 
 togglePassword.addEventListener('click', () => {
+
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordInput.setAttribute('type', type);
 
-    // Меняем иконку в зависимости от состояния
     togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
 });

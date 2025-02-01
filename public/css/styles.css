@@ -1,16 +1,15 @@
-/* Базовые стили */
 html, body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
     line-height: 1.6;
-    background-color: #eaf5ea; /* Светло-зелёный фон */
+    background-color: #eaf5ea;
     color: #333;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
-/* Контейнер профиля */
+
 .profile-container {
     max-width: 600px;
     margin: auto;
@@ -21,7 +20,6 @@ html, body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Заголовок профиля */
 .profile-header {
     margin-bottom: 20px;
 }
@@ -34,7 +32,6 @@ html, body {
     object-fit: cover;
 }
 
-/* Тело профиля */
 .profile-body {
     margin-bottom: 20px;
 }
@@ -50,7 +47,6 @@ html, body {
     margin-bottom: 10px;
 }
 
-/* Кнопки профиля */
 button {
     padding: 10px 15px;
     font-size: 1rem;
@@ -64,7 +60,6 @@ button:hover {
     opacity: 0.9;
 }
 
-/* Кнопка выхода */
 .btn-logout {
     background-color: #ffc107;
     color: #fff;
@@ -75,7 +70,6 @@ button:hover {
     background-color: #e0a800;
 }
 
-/* Кнопка удаления аккаунта */
 .btn-delete {
     background-color: #dc3545;
     color: white;
@@ -84,7 +78,6 @@ button:hover {
 .btn-delete:hover {
     background-color: #c82333;
 }
-/* Контейнер для никнейма */
 .nickname-input-wrapper {
     position: relative;
     margin-bottom: 15px;
@@ -110,7 +103,6 @@ button:hover {
     font-style: italic;
 }
 
-/* Заголовок */
 header {
     background-color: #28a745; /* Яркий зелёный */
     color: white;
@@ -136,11 +128,10 @@ header nav a {
 }
 
 header nav a:hover {
-    background-color: #218838; /* Более тёмный зелёный при наведении */
+    background-color: #218838;
     border-radius: 5px;
 }
 
-/* Контент */
 main {
     flex-grow: 0;
     padding: 20px;
@@ -157,7 +148,6 @@ main h2 {
     margin-bottom: 20px;
 }
 
-/* Формы */
 form {
     display: flex;
     flex-direction: column;
@@ -196,7 +186,6 @@ form button:hover {
     background-color: #218838;
 }
 
-/* Футер */
 footer {
     background-color: #28a745;
     color: white;
@@ -207,7 +196,6 @@ footer {
     width: 100%;
 }
 
-/* Списки */
 ul, ol {
     padding-left: 20px;
 }
@@ -217,7 +205,6 @@ li {
 }
 
 
-/* Стили для загрузки файла */
 .file-upload {
     display: flex;
     align-items: center;
@@ -235,7 +222,6 @@ li {
     transition: background-color 0.3s;
 }
 
-/* Модальное окно */
 .modal {
     position: fixed;
     top: 0;
@@ -275,8 +261,8 @@ button#modalOkButton:hover {
     color: #555;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    max-height: 100px; /* Ограничение высоты */
-    overflow-y: auto; /* Скролл для длинных текстов */
+    max-height: 100px;
+    overflow-y: auto;
 }
 
 
@@ -289,10 +275,6 @@ button#modalOkButton:hover {
     color: #555;
 }
 
-/* Простая стилизация карточек */
-
-
-/* Уведомления и сообщения */
 .alert {
     padding: 15px;
     background-color: #28a745;
@@ -302,17 +284,13 @@ button#modalOkButton:hover {
 }
 
 .alert.error {
-    background-color: #dc3545; /* Красный цвет для ошибок */
+    background-color: #dc3545;
 }
 
 .alert.success {
-    background-color: #28a745; /* Зелёный для успеха */
+    background-color: #28a745;
 }
 
-
-
-
-/* Раздел для формы создания поста */
 form {
     margin-bottom: 30px;
 }
@@ -344,7 +322,6 @@ form textarea {
     height: 100px;
 }
 
-/* Кнопка формы */
 form button {
     background-color: #28a745;
     color: white;
@@ -357,7 +334,6 @@ form button:hover {
     background-color: #218838;
 }
 
-/* Раздел для постов */
 #postsContainer {
     margin-top: 20px;
 }
@@ -368,7 +344,6 @@ form button:hover {
 }
 
 
-/* Карточка */
 .card {
     background-color: white;
     border-radius: 10px;
@@ -382,19 +357,16 @@ form button:hover {
     transform: translateY(-5px);
 }
 
-/* Заголовок карточки */
 .card h3 {
     color: #28a745;
     margin-bottom: 10px;
 }
 
-/* Контент карточки */
 .card p {
     margin: 5px 0;
     color: #555;
 }
 
-/* Кнопки в карточке */
 .post-buttons {
     display: flex;
     justify-content: space-between;
@@ -402,8 +374,6 @@ form button:hover {
     margin-top: 10px;
 }
 
-
-/* Карта */
 #map {
     height: 500px;
     width: 100%;
@@ -412,7 +382,6 @@ form button:hover {
     border-radius: 10px;
 }
 
-/* Карточка комментария */
 .comment-card {
     background: white;
     border-radius: 10px;
@@ -470,7 +439,6 @@ form button:hover {
     background: #c82333;
 }
 
-/* Контейнер кнопок */
 .post-buttons {
     display: flex;
     justify-content: space-between;
@@ -478,8 +446,6 @@ form button:hover {
     margin-top: 10px;
 }
 
-/* Кнопка лайка */
-/* Кнопка лайка */
 .like-post {
     font-size: 0.9rem;
     padding: 5px 10px;
@@ -501,7 +467,6 @@ form button:hover {
     opacity: 0.9;
 }
 
-/* Кнопка комментариев */
 .comment-btn {
     font-size: 0.9rem;
     padding: 5px 10px;
@@ -518,7 +483,6 @@ form button:hover {
     color: white;
 }
 
-/* Кнопки редактирования и удаления */
 .small-btn {
     font-size: 0.8rem;
     padding: 5px;
@@ -620,3 +584,16 @@ button#modalOkButton:hover {
     font-size: 1rem;
     color: #555;
 }
+
+.replies {
+    margin-left: 20px;
+    border-left: 2px solid #ddd;
+    padding-left: 10px;
+}
+
+.reply-form {
+    margin-top: 10px;
+    display: none;
+}
+
+

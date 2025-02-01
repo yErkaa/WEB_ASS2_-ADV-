@@ -7,8 +7,9 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     avatar: { type: String, default: '' },
     nickname: { type: String, default: '' },
-    twoFactorCode: { type: String, default: null }, // Код для 2FA
-    twoFactorExpires: { type: Date, default: null } // Время истечения кода
+    activeToken: { type: String, default: null },
+    twoFactorCode: { type: String, default: null },
+    twoFactorExpires: { type: Date, default: null }
 }, { timestamps: true });
 
 

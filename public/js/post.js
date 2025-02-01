@@ -1,4 +1,3 @@
-// Функция для отображения модального окна
 function showModal(message, input = false, callback = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -23,7 +22,35 @@ function showModal(message, input = false, callback = null) {
     });
 }
 
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModal('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModal('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', async () => {
+    if (!(await checkDatabaseStatus())) return;
     const token = localStorage.getItem('token');
     if (!token) {
         showModal('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
@@ -34,8 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const universitySelect = document.getElementById('university');
 
-    // Загрузка университетов
     const loadUniversities = async () => {
+
         try {
             const response = await fetch('http://localhost:5000/universities', {
                 headers: { Authorization: `Bearer ${token}` },
@@ -47,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const universities = await response.json();
 
-            universitySelect.innerHTML = ''; // Очистка существующих опций
+            universitySelect.innerHTML = '';
 
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
@@ -70,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('postForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!(await checkDatabaseStatus())) return;
 
         const university = document.getElementById('university').value;
         const title = document.getElementById('title').value;

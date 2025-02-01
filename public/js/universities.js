@@ -1,4 +1,3 @@
-// Функция для отображения модального окна
 function showModal(message, input = false, callback = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -20,9 +19,36 @@ function showModal(message, input = false, callback = null) {
         document.body.removeChild(modal);
     });
 }
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModal('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModal('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Загрузка списка университетов...');
+    if (!(await checkDatabaseStatus())) return;
     try {
         const response = await fetch('http://localhost:5000/universities');
         if (!response.ok) throw new Error(`Ошибка загрузки университетов: ${response.statusText}`);

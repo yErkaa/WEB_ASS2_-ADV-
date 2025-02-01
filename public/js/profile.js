@@ -1,4 +1,3 @@
-// Функция для отображения модального окна
 function showModal(message, input = false, callback = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -16,18 +15,46 @@ function showModal(message, input = false, callback = null) {
     const okButton = document.getElementById('modalOkButton');
     okButton.addEventListener('click', () => {
         if (callback) {
-            callback(); // Выполняем действие при нажатии "ОК"
+            callback();
         }
-        document.body.removeChild(modal); // Закрываем модальное окно
+        document.body.removeChild(modal);
     });
 }
 
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModal('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModal('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', async () => {
+    if (!(await checkDatabaseStatus())) return;
     const token = localStorage.getItem('token');
 
     if (!token) {
         showModal('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
-            window.location.href = 'login.html'; // Перенаправление на страницу входа
+            window.location.href = 'login.html';
         });
         return;
     }
@@ -48,20 +75,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 const error = await response.json();
                 showModal(`Ошибка загрузки профиля: ${error.error}`, false, () => {
-                    window.location.href = 'login.html'; // Перенаправление на страницу входа
+                    window.location.href = 'login.html';
                 });
             }
         } catch (err) {
             console.error('Ошибка загрузки профиля:', err);
             showModal('Ошибка загрузки профиля. Перенаправляем на страницу входа...', false, () => {
-                window.location.href = 'login.html'; // Перенаправление на страницу входа
+                window.location.href = 'login.html';
             });
         }
     };
 
-    // Обработчик кнопки "Обновить никнейм"
     document.getElementById('updateNicknameButton').addEventListener('click', async () => {
         const newNickname = document.getElementById('nickname').value.trim();
+        if (!(await checkDatabaseStatus())) return;
 
         if (!newNickname) {
             showModal('Никнейм не может быть пустым');
@@ -90,15 +117,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Обработчик кнопки "Выход"
     document.getElementById('logoutButton').addEventListener('click', () => {
+
         localStorage.removeItem('token');
         showModal('Вы успешно вышли из аккаунта.', false, () => {
-            window.location.href = 'login.html'; // Перенаправление на страницу входа
+            window.location.href = 'login.html';
         });
     });
 
-    // Обработчик кнопки "Удалить аккаунт"
     document.getElementById('deleteAccountButton').addEventListener('click', () => {
         showModal(
             'Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.',
@@ -113,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (response.ok) {
                         showModal('Аккаунт успешно удалён.', false, () => {
                             localStorage.removeItem('token');
-                            window.location.href = 'register.html'; // Перенаправление на регистрацию
+                            window.location.href = 'register.html';
                         });
                     } else {
                         const error = await response.json();
@@ -127,6 +153,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     });
 
-    // Загрузка профиля при загрузке страницы
     await loadUserProfile();
 });

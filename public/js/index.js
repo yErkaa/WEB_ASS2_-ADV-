@@ -19,7 +19,7 @@ function showModalWithCancel(message, input = false, callback = null, cancelCall
 
     cancelButton.addEventListener('click', () => {
         if (cancelCallback) cancelCallback();
-        document.body.removeChild(modal); // Закрыть модальное окно
+        document.body.removeChild(modal);
     });
 
     okButton.addEventListener('click', () => {
@@ -28,7 +28,7 @@ function showModalWithCancel(message, input = false, callback = null, cancelCall
         } else if (callback) {
             callback();
         }
-        document.body.removeChild(modal); // Закрыть модальное окно
+        document.body.removeChild(modal);
     });
 }
 
@@ -56,7 +56,7 @@ function showModalEditWithCancel(title, content, callback, cancelCallback) {
 
     cancelButton.addEventListener('click', () => {
         if (cancelCallback) cancelCallback();
-        document.body.removeChild(modal); // Закрыть модальное окно
+        document.body.removeChild(modal);
     });
 
     okButton.addEventListener('click', () => {
@@ -65,12 +65,41 @@ function showModalEditWithCancel(title, content, callback, cancelCallback) {
         if (newTitle && newContent && callback) {
             callback(newTitle, newContent);
         }
-        document.body.removeChild(modal); // Закрыть модальное окно
+        document.body.removeChild(modal);
     });
 }
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-// Основной код
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModalWithCancel('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModalWithCancel('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
+
+
+
 document.addEventListener('DOMContentLoaded', async () => {
+    await checkDatabaseStatus();
+    if (!(await checkDatabaseStatus())) return;
     console.log('DOM полностью загружен.');
     const token = localStorage.getItem('token');
     if (!token) {
@@ -92,8 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentUser = null;
 
     const getCurrentUser = async () => {
+
         console.log('Загрузка информации о текущем пользователе...');
         try {
+
             const response = await fetch('http://localhost:5000/auth/user', {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -111,7 +142,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const loadUniversities = async () => {
         console.log('Загрузка списка университетов...');
+
         try {
+
             const response = await fetch('http://localhost:5000/universities', {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -139,7 +172,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const loadPosts = async (universityId = 'all') => {
         postsContainer.innerHTML = '';
+        if (!(await checkDatabaseStatus())) return;
         try {
+
             const response = await fetch('http://localhost:5000/posts/get', {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -178,6 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 postsContainer.appendChild(postElement);
             });
 
+
             if (filteredPosts.length === 0) {
                 postsContainer.innerHTML = '<p>Постов нет.</p>';
             }
@@ -188,10 +224,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     postsContainer.addEventListener('click', async (e) => {
+
         if (e.target.classList.contains('like-post')) {
             const postId = e.target.dataset.id;
 
             try {
+
                 const response = await fetch(`http://localhost:5000/posts/${postId}/toggle-like`, {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${token}` },
@@ -210,6 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (e.target.classList.contains('delete-post')) {
+
             const postId = e.target.dataset.id;
 
             showModalWithCancel('Вы уверены, что хотите удалить этот пост?', false, async () => {

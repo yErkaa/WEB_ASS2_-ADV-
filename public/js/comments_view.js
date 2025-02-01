@@ -1,4 +1,3 @@
-// Функция для отображения модального окна с кнопкой "Отмена"
 function showModalWithCancel(message, input = false, callback = null, cancelCallback = null) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -20,7 +19,7 @@ function showModalWithCancel(message, input = false, callback = null, cancelCall
 
     cancelButton.addEventListener('click', () => {
         if (cancelCallback) cancelCallback();
-        document.body.removeChild(modal); // Закрыть модальное окно
+        document.body.removeChild(modal);
     });
 
     okButton.addEventListener('click', () => {
@@ -29,12 +28,40 @@ function showModalWithCancel(message, input = false, callback = null, cancelCall
         } else if (callback) {
             callback();
         }
-        document.body.removeChild(modal); // Закрыть модальное окно
+        document.body.removeChild(modal);
     });
 }
 
-// Основной код
+async function checkDatabaseStatus() {
+    try {
+        // Устанавливаем таймаут на 2 секунды
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch('http://localhost:5000/db-status', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('Ошибка соединения');
+
+        const data = await response.json();
+        if (data.status !== 'connected') {
+            console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+            showModalWithCancel('⚠️ База данных временно недоступна. Попробуйте позже.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('❌ Ошибка соединения с сервером:', err);
+        showModalWithCancel('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        return false;
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', async () => {
+    if (!(await checkDatabaseStatus())) return;
+
     const token = localStorage.getItem('token');
     if (!token) {
         showModalWithCancel('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
@@ -57,8 +84,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentUser = null;
 
-    // Загрузка текущего пользователя
     const loadCurrentUser = async () => {
+        if (!(await checkDatabaseStatus())) return;
         try {
             const response = await fetch('http://localhost:5000/auth/user', {
                 headers: { Authorization: `Bearer ${token}` },
@@ -71,8 +98,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Загрузка поста и комментариев
     const loadPostAndComments = async () => {
+        if (!(await checkDatabaseStatus())) return;
+
         try {
             const response = await fetch(`http://localhost:5000/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -82,7 +110,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const { post, comments } = await response.json();
 
-            // Отображение поста
             postContainer.innerHTML = `
                 <h2>${post.title}</h2>
                 <p>${post.content}</p>
@@ -91,7 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <small>Создан: ${new Date(post.createdAt).toLocaleString()}</small>
             `;
 
-            // Отображение комментариев
             commentsContainer.innerHTML = '';
             comments.forEach((comment) => {
                 const isAuthor = comment.author_id._id === currentUser._id;
@@ -118,8 +144,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Делегирование событий для редактирования и удаления
     commentsContainer.addEventListener('click', async (e) => {
+        if (!(await checkDatabaseStatus())) return;
+
         if (e.target.classList.contains('edit-btn')) {
             const commentId = e.target.dataset.id;
             const currentContent = e.target.dataset.content;
@@ -154,6 +181,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (e.target.classList.contains('delete-btn')) {
+            if (!(await checkDatabaseStatus())) return;
+
             const commentId = e.target.dataset.id;
 
             showModalWithCancel('Вы уверены, что хотите удалить комментарий?', false, async () => {
@@ -177,8 +206,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Отправка нового комментария
     commentForm.addEventListener('submit', async (e) => {
+        if (!(await checkDatabaseStatus())) return;
+
         e.preventDefault();
         const commentContentValue = commentContent.value.trim();
 
@@ -188,6 +218,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
+            if (!(await checkDatabaseStatus())) return;
+
             const response = await fetch('http://localhost:5000/comments/create', {
                 method: 'POST',
                 headers: {
@@ -209,6 +241,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             showModalWithCancel('Не удалось отправить комментарий.');
         }
     });
+
+
 
     await loadCurrentUser();
     await loadPostAndComments();

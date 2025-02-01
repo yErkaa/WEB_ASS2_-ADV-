@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const University = require('../models/University'); // Подключаем модель University
+const University = require('../models/University');
 
-// Создать новый университет
 router.post('/', async (req, res) => {
     try {
         const { name, address, coordinates, description } = req.body;
@@ -15,7 +14,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Получить список всех университетов
 router.get('/', async (req, res) => {
     try {
         const universities = await University.find();
@@ -26,7 +24,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Получить университет по ID
 router.get('/:id', async (req, res) => {
     try {
         const university = await University.findById(req.params.id);
@@ -40,7 +37,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Обновить университет по ID
 router.put('/:id', async (req, res) => {
     try {
         const { name, address, coordinates, description } = req.body;
@@ -59,7 +55,6 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Удалить университет по ID
 router.delete('/:id', async (req, res) => {
     try {
         const university = await University.findByIdAndDelete(req.params.id);

@@ -55,7 +55,6 @@
 
     const sendCodeButton = document.getElementById('send-code-button');
 
-    // При загрузке страницы запускаем таймер
     startCooldown(sendCodeButton, 60);
 
     sendCodeButton.addEventListener('click', async () => {
@@ -71,13 +70,12 @@
             const response = await fetch('/auth/send-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }) // Передаём email
+                body: JSON.stringify({ email })
             });
 
             const data = await response.json();
             document.getElementById('message').textContent = data.message || 'Код отправлен.';
 
-            // Запускаем таймер после отправки кода
             startCooldown(sendCodeButton, 60);
         } catch (err) {
             console.error('Ошибка при отправке кода:', err);
@@ -105,7 +103,6 @@
 
             const data = await response.json();
             if (response.ok && data.success) {
-                // Сохранение токена в localStorage
                 localStorage.setItem('token', data.token);
                 showModal('Код успешно подтверждён. Добро пожаловать!', false, () => {
                     window.location.href = '../html/index.html';
@@ -119,7 +116,6 @@
         }
     });
 
-    // Функция для отображения модального окна
     function showModal(message, input = false, callback = null) {
         const modal = document.createElement('div');
         modal.className = 'modal';
