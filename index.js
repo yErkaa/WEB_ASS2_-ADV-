@@ -57,12 +57,14 @@ const authRoutes = require('./src/routes/auth');
 const postsRoutes = require('./src/routes/posts');
 const universitiesRoutes = require('./src/routes/universities');
 const commentsRoutes = require('./src/routes/comments');
+const repliesRoutes = require('./src/routes/replies');
+app.use('/replies', repliesRoutes);
 
 // Используем роуты
 app.use('/auth', checkDatabaseConnection,authRoutes);
 app.use('/posts', checkDatabaseConnection,postsRoutes);
 app.use('/universities', checkDatabaseConnection,universitiesRoutes);
-app.use('/comments',checkDatabaseConnection, commentsRoutes);
+app.use('/comments', checkDatabaseConnection, commentsRoutes);
 
 // Подключаем статические файлы
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

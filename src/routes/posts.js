@@ -5,6 +5,7 @@ const University = require('../models/University');
 const authMiddleware = require('../middleware/authMiddleware');
 const Comment = require('../models/Comment');
 const rateLimitMiddleware = require('../middleware/rateLimitMiddleware');
+const Reply = require('../models/Reply'); // 👈 Добавляем модель
 
 const router = express.Router();
 const ObjectId = mongoose.Types.ObjectId;
@@ -78,6 +79,8 @@ router.get('/:id', async (req, res) => {
         if (!post) {
             return res.status(404).json({ error: 'Пост не найден' });
         }
+        console.log(`✅ Загружен пост: ${post.title}, Контент: ${post.content}`);
+
 
         const comments = await Comment.find({ post_id: id })
             .populate('author_id', 'nickname username avatar')

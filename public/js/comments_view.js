@@ -58,7 +58,6 @@ async function checkDatabaseStatus() {
     }
 }
 
-
 document.addEventListener('DOMContentLoaded', async () => {
     if (!(await checkDatabaseStatus())) return;
 
@@ -85,22 +84,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentUser = null;
 
     const loadCurrentUser = async () => {
-        if (!(await checkDatabaseStatus())) return;
         try {
             const response = await fetch('http://localhost:5000/auth/user', {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!response.ok) throw new Error('Не удалось получить данные пользователя');
+            if (!response.ok) throw new Error('Ошибка загрузки пользователя');
             currentUser = await response.json();
         } catch (err) {
-            console.error('Ошибка загрузки текущего пользователя:', err);
+            console.error('Ошибка загрузки пользователя:', err);
             showModalWithCancel('Не удалось загрузить информацию о текущем пользователе.');
         }
     };
 
     const loadPostAndComments = async () => {
-        if (!(await checkDatabaseStatus())) return;
-
         try {
             const response = await fetch(`http://localhost:5000/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -127,6 +123,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <p>${comment.content}</p>
                     <p class="comment-author">Автор: ${comment.author_id.nickname || comment.author_id.username}</p>
                     <p class="comment-date">${new Date(comment.createdAt).toLocaleString()}</p>
+                    <p>Лайков: <span class="likes-count" data-id="${comment._id}">${comment.likes.length}</span></p>
+                    <button class="like-comment" data-id="${comment._id}">❤️</button>
+                    <button class="view-replies" data-comment-id="${comment._id}" data-post-id="${postId}">
+                        💬 Посмотреть ответы
+                    </button>
+
                     ${
                     isAuthor
                         ? `<div class="comment-actions">
@@ -144,8 +146,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    const API_BASE_URL = 'http://localhost:5000'; // 👈 Добавляем базовый URL
+
+
     commentsContainer.addEventListener('click', async (e) => {
-        if (!(await checkDatabaseStatus())) return;
+        const commentId = e.target.dataset.id;
+
+        if (e.target.classList.contains('like-comment')) {
+            const commentId = e.target.dataset.id;
+
+            console.log(`🔥 Отправка запроса на лайк: ${API_BASE_URL}/comments/${commentId}/toggle-like`);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/comments/${commentId}/toggle-like`, { // 👈 Используем полный URL
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                });
+
+                if (!response.ok) {
+                    const text = await response.text(); // Читаем ответ как текст, чтобы увидеть ошибку
+                    throw new Error(`Ошибка сервера: ${text}`);
+                }
+
+                const { likesCount, liked } = await response.json();
+
+                // Обновляем лайки
+                const likesCountElement = document.querySelector(`.likes-count[data-id="${commentId}"]`);
+                if (likesCountElement) {
+                    likesCountElement.textContent = likesCount;
+                }
+
+                // Переключаем стиль кнопки
+                e.target.classList.toggle('liked', liked);
+
+                console.log(`✅ Лайк обновлен: ${likesCount} лайков`);
+            } catch (err) {
+                console.error('❌ Ошибка при лайке комментария:', err);
+                showModalWithCancel(`Не удалось поставить лайк: ${err.message}`);
+            }
+        }
+
+
+        if (e.target.classList.contains('view-replies')) {
+            const postId = e.target.dataset.postId;
+            const commentId = e.target.dataset.commentId;
+            window.location.href = `replies_view.html?postId=${postId}&commentId=${commentId}`;
+        }
 
         if (e.target.classList.contains('edit-btn')) {
             const commentId = e.target.dataset.id;
@@ -181,8 +227,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (e.target.classList.contains('delete-btn')) {
-            if (!(await checkDatabaseStatus())) return;
-
             const commentId = e.target.dataset.id;
 
             showModalWithCancel('Вы уверены, что хотите удалить комментарий?', false, async () => {
@@ -205,44 +249,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     });
-
-    commentForm.addEventListener('submit', async (e) => {
-        if (!(await checkDatabaseStatus())) return;
-
-        e.preventDefault();
-        const commentContentValue = commentContent.value.trim();
-
-        if (!commentContentValue) {
-            showModalWithCancel('Комментарий не может быть пустым.');
-            return;
-        }
-
-        try {
-            if (!(await checkDatabaseStatus())) return;
-
-            const response = await fetch('http://localhost:5000/comments/create', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ post_id: postId, content: commentContentValue }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Ошибка создания комментария');
-            }
-
-            commentContent.value = '';
-            showModalWithCancel('Комментарий успешно добавлен.', false, loadPostAndComments);
-        } catch (err) {
-            console.error('Ошибка при добавлении комментария:', err);
-            showModalWithCancel('Не удалось отправить комментарий.');
-        }
-    });
-
-
 
     await loadCurrentUser();
     await loadPostAndComments();
