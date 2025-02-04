@@ -7,7 +7,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
-
+const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -200,11 +200,16 @@ router.delete('/user', async (req, res) => {
 });
 
 
-router.get('/user', verifyToken, async (req, res) => {
+router.get('/user', verifyToken, authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('-password');
+        console.log('🔍 Запрос на загрузку пользователя:', req.user);
+
+        const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+        if (!user.role) {
+            user.role = 'user'; // Устанавливаем роль по умолчанию
         }
 
         console.log('Информация о пользователе отправлена:', user);

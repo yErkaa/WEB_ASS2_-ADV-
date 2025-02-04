@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     avatar: { type: String, default: '' },
     nickname: { type: String, default: '' },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },  // Добавлено поле role
     activeToken: { type: String, default: null },
     twoFactorCode: { type: String, default: null },
     twoFactorExpires: { type: Date, default: null }

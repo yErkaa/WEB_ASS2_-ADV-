@@ -13,19 +13,16 @@ const authMiddleware = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     console.log('Полученный токен:', token);
 
-    if (!token) {
-        console.log('Ошибка: Токен отсутствует в заголовке');
-        return res.status(401).json({ error: 'Нет токена, доступ запрещён' });
-    }
-
     try {
         console.log('Токен перед проверкой:', token);
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log('Декодированные данные из токена:', decoded);
+        req.user = { id: decoded.id }; // Здесь явно добавляем id
 
 
         const user = await User.findById(decoded.id);
+        user.activeToken = token;
 
         if (!user) {
             console.log('Ошибка: Пользователь не найден');

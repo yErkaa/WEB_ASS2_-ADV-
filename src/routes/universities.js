@@ -1,6 +1,28 @@
 const express = require('express');
-const router = express.Router();
 const University = require('../models/University');
+const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
+
+const router = express.Router();
+
+router.post('/create', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { name, address, description } = req.body;
+
+        if (!name || !address || !description) {
+            return res.status(400).json({ error: 'Все поля обязательны' });
+        }
+
+        const university = new University({ name, address, description });
+        await university.save();
+
+        res.status(201).json({ message: 'Университет успешно добавлен', university });
+    } catch (err) {
+        console.error('Ошибка при добавлении университета:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
 
 router.post('/', async (req, res) => {
     try {

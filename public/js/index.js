@@ -98,10 +98,13 @@ async function checkDatabaseStatus() {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
+
     await checkDatabaseStatus();
     if (!(await checkDatabaseStatus())) return;
     console.log('DOM полностью загружен.');
     const token = localStorage.getItem('token');
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+
     if (!token) {
         console.warn('Токен отсутствует. Перенаправляем на страницу входа.');
         showModalWithCancel('Вы не авторизованы. Перенаправляем на страницу входа...', false, () => {
@@ -110,11 +113,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    if (!token) {
-        alert('Вы не авторизованы. Перенаправляем на страницу входа.');
-        window.location.href = 'login.html';
-    }
+    try {
+        const response = await fetch('http://localhost:5000/auth/user', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
 
+        if (!response.ok) throw new Error('Ошибка получения пользователя');
+        const user = await response.json();
+
+        if (user.role === 'admin') {
+            adminPanelBtn.style.display = 'block';
+            adminPanelBtn.addEventListener('click', () => {
+                window.location.href = 'admin.html';
+            });
+        }
+    } catch (err) {
+        console.error('Ошибка:', err);
+    }
 
     const universityFilter = document.getElementById('universityFilter');
     const postsContainer = document.getElementById('postsContainer');
@@ -131,6 +146,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('Не удалось загрузить информацию о пользователе');
             const user = await response.json();
             console.log('Информация о пользователе загружена:', user);
+            if (user.role === 'admin') {
+                adminPanelBtn.style.display = 'block'; // Показываем кнопку
+                adminPanelBtn.addEventListener('click', () => {
+                    window.location.href = 'admin.html'; // Перенаправляем на админ-панель
+                });
+            }
             return user;
             return await response.json();
         } catch (err) {
@@ -139,6 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return null;
         }
     };
+
 
     const loadUniversities = async () => {
         console.log('Загрузка списка университетов...');

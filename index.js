@@ -53,6 +53,9 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // Подключаем роуты
+const adminRoutes = require('./src/routes/admin');
+app.use('/admin', adminRoutes);
+
 const authRoutes = require('./src/routes/auth');
 const postsRoutes = require('./src/routes/posts');
 const universitiesRoutes = require('./src/routes/universities');
