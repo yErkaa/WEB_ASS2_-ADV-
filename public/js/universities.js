@@ -39,8 +39,8 @@ async function checkDatabaseStatus() {
 
         return true;
     } catch (err) {
-        console.error('❌ Ошибка соединения с сервером:', err);
-        showModal('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+        showModalWithCancel('⚠️ База данных временно недоступна. Попробуйте позже.');
         return false;
     }
 }

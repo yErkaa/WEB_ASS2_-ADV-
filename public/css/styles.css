@@ -597,3 +597,53 @@ button#modalOkButton:hover {
 }
 
 
+.profile-container {
+    max-width: 600px;
+    margin: 40px auto;
+    text-align: center;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-container h2 {
+    color: #28a745;
+}
+
+.nickname-input-wrapper input,
+.nickname-input-wrapper textarea {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nickname-input-wrapper textarea {
+    height: 100px;
+    resize: none;
+}
+
+.nickname-input-wrapper input:focus,
+.nickname-input-wrapper textarea:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+    outline: none;
+}
+
+button {
+    padding: 10px 15px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    background-color: #28a745;
+    color: white;
+}
+
+button:hover {
+    background-color: #218838;
+}

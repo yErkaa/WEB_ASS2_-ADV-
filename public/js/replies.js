@@ -52,8 +52,8 @@ async function checkDatabaseStatus() {
 
         return true;
     } catch (err) {
-        console.error('❌ Ошибка соединения с сервером:', err);
-        showModalWithCancel('⚠️ Ошибка соединения с сервером. Попробуйте позже.');
+        console.warn('⚠️ База данных отключена. Показываем предупреждение.');
+        showModal('⚠️ База данных временно недоступна. Попробуйте позже.');
         return false;
     }
 }
@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const postId = urlParams.get('postId');
     const commentId = urlParams.get('commentId');
 
+    if (!(await checkDatabaseStatus())) return;
 
     const postContainer = document.getElementById('postContainer');
     const commentContainer = document.getElementById('commentContainer');
