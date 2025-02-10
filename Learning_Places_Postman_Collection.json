@@ -1,0 +1,355 @@
+{
+  "info": {
+    "_postman_id": "12345-67890",
+    "name": "Full API Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/auth/login",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"aldongaroverken3@gmail.com\", \"password\": \"Adilek!123\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Login successful\", function () { pm.response.to.have.status(200); });",
+            "var responseJson = pm.response.json();",
+            "if (responseJson.token) {",
+            "    pm.environment.set(\"token\", responseJson.token);",
+            "} else {",
+            "    pm.test(\"❌ Ошибка: токен не получен\", function () { pm.response.to.have.status(500); });",
+            "}"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Universities - Get All",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/universities/"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Fetched universities\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Posts - Get All",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/posts/get"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Fetched posts\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Posts - Create",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/posts/create",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"title\": \"Test Post\", \"content\": \"Test Content\", \"rating\": 0, \"author\": \"{{user_id}}\", \"university\": \"67a89baef4aee375e04e5a40\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Post created\", function () { pm.response.to.have.status(201); });",
+            "var responseJson = pm.response.json();",
+            "if (responseJson._id) {",
+            "    pm.environment.set(\"post_id\", responseJson._id);",
+            "    console.log(\"✅ Post ID saved:\", responseJson._id);",
+            "} else {",
+            "    pm.test(\"❌ Error: Post ID not found\", function () { pm.response.to.have.status(500); });",
+            "}"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Posts - Get by ID",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/posts/{{post_id}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Fetched post by ID\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Posts - Toggle Like",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/posts/{{post_id}}/toggle-like",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Post like toggled\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Posts - Update",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/posts/{{post_id}}",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"title\": \"Updated Post Title\", \"content\": \"Updated Content\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Post updated\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+
+    {
+      "name": "Comments - Create",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/comments/create",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"post_id\": \"{{post_id}}\", \"content\": \"Test Comment\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Comment created\", function () { pm.response.to.have.status(201); });",
+            "var responseJson = pm.response.json();",
+            "if (responseJson._id) {",
+            "    pm.environment.set(\"comment_id\", responseJson._id);",
+            "    console.log(\"✅ Comment ID saved:\", responseJson._id);",
+            "} else {",
+            "    pm.test(\"❌ Error: Comment ID not found\", function () { pm.response.to.have.status(500); });",
+            "}"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Comments - Toggle Like",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/comments/{{comment_id}}/toggle-like",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Comment like toggled\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Comments - Update",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/comments/{{comment_id}}",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"content\": \"Updated Comment Content\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Comment updated\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Replies - Create",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/replies/comment/{{comment_id}}/reply",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"content\": \"Test Reply\" }"
+        }
+      },
+      "exec": [
+        "pm.test(\"Reply created\", function () { pm.response.to.have.status(201); });",
+        "var responseJson = pm.response.json();",
+        "if (responseJson._id) {",
+        "    pm.environment.set(\"reply_id\", responseJson._id);",
+        "    console.log(\"✅ Reply ID saved:\", responseJson._id);",
+        "} else {",
+        "    pm.test(\"❌ Error: Reply ID not found\", function () { pm.response.to.have.status(500); });",
+        "}"
+      ]
+    },
+    {
+      "name": "Replies - Get for Comment",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/replies/comment/{{comment_id}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Fetched replies\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Replies - Toggle Like",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/replies/{{reply_id}}/toggle-like",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Reply like toggled\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Replies - Update",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/replies/{{reply_id}}",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"content\": \"Updated Reply Content\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Reply updated\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Replies - Delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/replies/{{reply_id}}",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Reply deleted\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Comments - Delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/comments/{{comment_id}}",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Comment deleted\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Posts - Delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/posts/{{post_id}}",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Post deleted\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/auth/logout",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": ["pm.test(\"Logout successful\", function () { pm.response.to.have.status(200); });"] }
+      }]
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/auth/login",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"aldongaroverken3@gmail.com\", \"password\": \"Adilek!123\" }"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Login successful\", function () { pm.response.to.have.status(200); });",
+            "var responseJson = pm.response.json();",
+            "if (responseJson.token) {",
+            "    pm.environment.set(\"token\", responseJson.token);",
+            "} else {",
+            "    pm.test(\"❌ Ошибка: токен не получен\", function () { pm.response.to.have.status(500); });",
+            "}"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Auth - Delete Account",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/auth/delete-account",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Account deleted\", function () { pm.response.to.have.status(200); });"
+          ]
+        }
+      }]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "post_id", "value": "" },
+    { "key": "comment_id", "value": "" },
+    { "key": "reply_id", "value": "" }
+  ]
+}
