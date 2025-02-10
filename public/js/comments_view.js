@@ -76,6 +76,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('postId');
 
+    document.getElementById('commentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const content = document.getElementById('commentContent').value.trim();
+
+        if (!content) {
+            showModalWithCancel('Комментарий не может быть пустым.');
+            return;
+        }
+
+        // ✅ Получаем post_id из URL (важно!)
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('postId');
+
+        if (!postId) {
+            showModalWithCancel('Ошибка: ID поста не найден.');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/comments/create', { // ✅ Отправляем post_id
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ post_id: postId, content }) // ✅ Передаём post_id в запросе
+            });
+
+            if (!response.ok) throw new Error('Ошибка при создании комментария');
+
+            showModalWithCancel('Комментарий успешно добавлен.', false, () => location.reload());
+        } catch (err) {
+            console.error('Ошибка при отправке комментария:', err);
+            showModalWithCancel('Не удалось отправить комментарий.');
+        }
+    });
+
     if (!postId) {
         showModalWithCancel('ID поста не указан.');
         return;
@@ -150,8 +187,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     commentsContainer.addEventListener('click', async (e) => {
-        const commentId = e.target.dataset.id;
-
         if (e.target.classList.contains('like-comment')) {
             const commentId = e.target.dataset.id;
 

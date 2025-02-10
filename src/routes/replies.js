@@ -10,7 +10,7 @@ router.post('/comment/:commentId/reply', authMiddleware, async (req, res) => {
     try {
         const { content, postId } = req.body;
         const { commentId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user.id;
 
         if (!content) {
             return res.status(400).json({ error: 'Ответ не может быть пустым' });

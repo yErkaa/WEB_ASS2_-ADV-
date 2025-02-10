@@ -162,31 +162,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('sendReply').addEventListener('click', async () => {
         try {
             const token = localStorage.getItem('token');
-            console.log('🔍 Токен перед отправкой запроса:', token);
             if (!token) {
-                alert('Вы не авторизованы!');
+                showModalWithCancel('Вы не авторизованы.');
                 return;
             }
 
             const content = document.getElementById('replyInput').value.trim();
             if (!content) {
-                alert('Ответ не может быть пустым.');
+                showModalWithCancel('Ответ не может быть пустым.');
                 return;
             }
 
+            // ✅ Получаем `postId` и `commentId` из URL (они должны быть!)
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('postId');
+            const commentId = urlParams.get('commentId');
+
+            if (!postId || !commentId) {
+                showModalWithCancel('Ошибка: отсутствует ID поста или комментария.');
+                return;
+            }
+
+            console.log(`📌 Отправка ответа: postId=${postId}, commentId=${commentId}`);
+
             const response = await fetch(`${API_BASE_URL}/replies/comment/${commentId}/reply`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ content, postId })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ content, postId }) // ✅ Передаём `postId` в запросе
             });
 
-            if (!response.ok) throw new Error('Ошибка при отправке ответа');
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Ошибка при отправке ответа: ${errorText}`);
+            }
+
             document.getElementById('replyInput').value = '';
-            loadReplies();
+            showModalWithCancel('Ответ успешно отправлен.', false, loadReplies);
         } catch (err) {
             console.error('❌ Ошибка при отправке ответа:', err);
+            showModalWithCancel(`Ошибка при отправке ответа: ${err.message}`);
         }
     });
+
 
 
     document.addEventListener('click', async (event) => {

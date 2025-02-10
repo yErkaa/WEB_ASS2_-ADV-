@@ -232,28 +232,26 @@ router.get('/user', verifyToken, async (req, res) => {
 
 
 
-router.put('/user', async (req, res) => {
+// 📌 Обновление никнейма
+router.put('/user', authMiddleware, async (req, res) => {
     try {
         const { nickname } = req.body;
-
         if (!nickname) {
             return res.status(400).json({ error: 'Никнейм не может быть пустым' });
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            decoded.id,
-            { nickname },
-            { new: true }
-        ).select('-password');
-
-        if (!updatedUser) {
+        const userId = req.user.id; // ✅ Исправлено: теперь берём ID из `req.user`
+        const user = await User.findById(userId);
+        if (!user) {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
-        console.log('Никнейм успешно обновлен:', updatedUser);
-        res.json({ message: 'Никнейм успешно обновлен', user: updatedUser });
+        user.nickname = nickname;
+        await user.save();
+
+        res.json({ message: 'Никнейм успешно обновлен', nickname });
     } catch (err) {
-        console.error('Ошибка обновления никнейма:', err.message || err);
+        console.error('Ошибка обновления никнейма:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });

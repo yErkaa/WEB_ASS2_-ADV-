@@ -35,7 +35,8 @@ const authMiddleware = async (req, res, next) => {
         }
 
 
-        req.user = { id: user._id.toString() };
+        req.user = { id: user._id.toString(), role: user.role };
+
         console.log('✅ Данные пользователя сохранены в req.user:', req.user);
 
         next();
