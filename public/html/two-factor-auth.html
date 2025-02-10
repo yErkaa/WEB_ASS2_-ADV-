@@ -9,10 +9,6 @@
 <body>
 <header>
     <h1>Learning Places</h1>
-<!--    <nav>-->
-<!--        <a href="../html/index.html">Главная</a>-->
-<!--        <a href="../html/login.html">Вход</a>-->
-<!--    </nav>-->
 </header>
 <main>
     <form id="send-code-form">
@@ -25,7 +21,6 @@
         <input type="text" id="code" name="code" placeholder="Введите полученный код" required>
         <button type="button" id="verify-code-button">Проверить код</button>
         <button type="button" id="send-code-button">Отправить код</button>
-
     </form>
 
     <div id="message" style="margin-top: 20px; color: red;"></div>
@@ -35,7 +30,6 @@
 </footer>
 
 <script>
-
     function startCooldown(button, seconds) {
         button.disabled = true;
         let remainingTime = seconds;
@@ -45,17 +39,14 @@
                 clearInterval(interval);
                 button.disabled = false;
                 button.textContent = 'Отправить код';
-
-                button.textContent = `Повторно отправить код можно через: ${remainingTime}`; // Показываем обратный отсчет
+            } else {
+                button.textContent = `Повторно через: ${remainingTime} сек`;
                 remainingTime--;
             }
         }, 1000);
     }
 
-
     const sendCodeButton = document.getElementById('send-code-button');
-
-    startCooldown(sendCodeButton, 60);
 
     sendCodeButton.addEventListener('click', async () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -83,7 +74,6 @@
         }
     });
 
-
     document.getElementById('verify-code-button').addEventListener('click', async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const email = urlParams.get('email');
@@ -104,8 +94,8 @@
             const data = await response.json();
             if (response.ok && data.success) {
                 localStorage.setItem('token', data.token);
-                showModal('Код успешно подтверждён. Добро пожаловать!', false, () => {
-                    window.location.href = '../html/index.html';
+                showModal('Код успешно подтверждён! Перенаправляем на страницу входа...', false, () => {
+                    window.location.href = '../html/login.html';
                 });
             } else {
                 document.getElementById('message').textContent = data.message || 'Ошибка проверки кода.';

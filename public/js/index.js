@@ -94,12 +94,8 @@ async function checkDatabaseStatus() {
     }
 }
 
-
-
-
 document.addEventListener('DOMContentLoaded', async () => {
 
-    await checkDatabaseStatus();
     if (!(await checkDatabaseStatus())) return;
     console.log('DOM полностью загружен.');
     const token = localStorage.getItem('token');
@@ -153,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
             return user;
-            return await response.json();
+
         } catch (err) {
             console.error('Ошибка получения пользователя:', err);
             showModalWithCancel('Не удалось загрузить информацию о пользователе.');

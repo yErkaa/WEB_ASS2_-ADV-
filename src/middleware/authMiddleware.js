@@ -35,7 +35,9 @@ const authMiddleware = async (req, res, next) => {
         }
 
 
-        req.user = user;
+        req.user = { id: user._id.toString() };
+        console.log('✅ Данные пользователя сохранены в req.user:', req.user);
+
         next();
     } catch (err) {
         console.error('Ошибка проверки токена:', err);

@@ -75,28 +75,29 @@ function validatePassword(password) {
 
     return null;
 }
+document.getElementById('registerForm').setAttribute('enctype', 'multipart/form-data');
 
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    if (!(await checkDatabaseStatus())) return;
-    e.preventDefault();
+    e.preventDefault(); // Останавливаем стандартную отправку формы
 
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
     const avatarInput = document.getElementById('avatar');
     const avatar = avatarInput.files[0];
 
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-        showModal(passwordError);
+    if (!username || !password) {
+        showModal('Имя пользователя и пароль обязательны');
         return;
     }
 
     const formData = new FormData();
     formData.append('username', username);
-    formData.append('password', password);
+    formData.append('password', password); // 🔥 Теперь пароль отправляется правильно
     if (avatar) {
         formData.append('avatar', avatar);
     }
+
+    console.log("📩 Отправляемые данные:", [...formData.entries()]); // Проверяем, что отправляется
 
     try {
         const response = await fetch('http://localhost:5000/auth/register', {
@@ -109,23 +110,18 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             if (result.redirect) {
                 window.location.href = result.redirect;
             } else {
-                showModal('Регистрация успешна! Перенаправляем на страницу входа...', false, () => {
+                showModal('Регистрация успешна! Перенаправляем...', false, () => {
                     window.location.href = 'login.html';
                 });
             }
         } else {
-            if (result.error === 'Пользователь с таким email уже зарегистрирован') {
-                showModal('Пользователь с таким email уже зарегистрирован. Используйте другой email.');
-            } else {
-                showModal(`Ошибка регистрации: ${result.error}`);
-            }
+            showModal(`Ошибка регистрации: ${result.error}`);
         }
     } catch (err) {
         console.error('Ошибка:', err);
-        showModal('Не удалось зарегистрироваться. Попробуйте снова.');
+        showModal('Ошибка при регистрации. Попробуйте снова.');
     }
 });
-
 
 
 document.getElementById('avatar').addEventListener('change', function () {
@@ -137,9 +133,7 @@ const passwordInput = document.getElementById('password');
 const togglePassword = document.getElementById('togglePassword');
 
 togglePassword.addEventListener('click', () => {
-
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordInput.setAttribute('type', type);
-
     togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
 });

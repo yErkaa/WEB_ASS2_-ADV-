@@ -16,7 +16,7 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET не найден. Пожалуйста, настройте его в .env');
 }
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ storage: multer.memoryStorage() });
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -43,15 +43,7 @@ async function sendEmail(to, subject, text) {
         throw err;
     }
 }
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        cb(null, `${file.fieldname}-${uniqueSuffix}-${file.originalname}`);
-    },
-});
+
 
 const verifyToken = async (req, res, next) => {
     if (!req.headers) {
@@ -88,57 +80,63 @@ const verifyToken = async (req, res, next) => {
 };
 
 
+
 router.post('/register', upload.single('avatar'), async (req, res) => {
-    try {
-        const { username, password } = req.body;
+    console.log("📩 Полученные данные (req.body):", req.body);
+    console.log("📩 Полученный файл (req.file):", req.file);
 
-        if (!username || !password) {
-            return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
-        }
-
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Пользователь с таким email уже зарегистрирован' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        let avatarPath = '';
-        if (req.file) {
-            const resizedImagePath = `uploads/resized-${req.file.filename}`;
-            await sharp(req.file.path)
-                .resize(128, 128)
-                .toFormat('png')
-                .toFile(resizedImagePath);
-            fs.unlinkSync(req.file.path);
-            avatarPath = resizedImagePath.replace(/\\/g, '/');
-        }
-
-        const twoFactorCode = crypto.randomInt(100000, 999999).toString();
-        const user = new User({
-            username,
-            password: hashedPassword,
-            avatar: avatarPath,
-            twoFactorCode,
-            twoFactorExpires: new Date(Date.now() + 10 * 60 * 1000),
-        });
-
-        await user.save();
-        await sendEmail(
-            user.username,
-            'Ваш код для двухфакторной аутентификации',
-            `Ваш код: ${twoFactorCode}`
-        );
-
-        res.status(201).json({
-            message: 'Пользователь успешно зарегистрирован. Перенаправляем на страницу двухфакторной аутентификации.',
-            redirect: `http://localhost:5000/two-factor-auth?email=${encodeURIComponent(user.username)}`,
-        });
-    } catch (err) {
-        console.error('Ошибка при регистрации:', err);
-        res.status(500).json({ error: 'Ошибка при регистрации' });
+    // 🔥 Делаем `password` обязательным полем
+    if (!req.body.password) {
+        return res.status(400).json({ error: 'Пароль не был передан!' });
     }
+
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
+    }
+
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+        return res.status(400).json({ error: 'Пользователь с таким email уже зарегистрирован' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    let avatarPath = '';
+
+    if (req.file) {
+        const resizedImagePath = `uploads/resized-${Date.now()}-${req.file.originalname}`;
+        await sharp(req.file.buffer)
+            .resize(128, 128)
+            .toFormat('png')
+            .toFile(resizedImagePath);
+        avatarPath = resizedImagePath.replace(/\\/g, '/');
+    }
+
+    const twoFactorCode = crypto.randomInt(100000, 999999).toString();
+    const user = new User({
+        username,
+        password: hashedPassword,
+        avatar: avatarPath,
+        twoFactorCode,
+        twoFactorExpires: new Date(Date.now() + 10 * 60 * 1000),
+    });
+
+    await user.save();
+
+    await sendEmail(
+        user.username,
+        'Ваш код для двухфакторной аутентификации',
+        `Ваш код: ${twoFactorCode}`
+    );
+
+    res.status(201).json({
+        message: 'Пользователь успешно зарегистрирован. Перенаправляем на страницу двухфакторной аутентификации.',
+        redirect: `http://localhost:5000/two-factor-auth?email=${encodeURIComponent(user.username)}`,
+    });
 });
+
+
 
 
 router.post('/login', async (req, res) => {
@@ -183,42 +181,55 @@ router.post('/logout', verifyToken, async (req, res) => {
 });
 
 
-router.delete('/user', async (req, res) => {
-    try {
 
-        const user = await User.findByIdAndDelete(decoded.id);
+router.delete('/user', authMiddleware, async (req, res) => {
+    try {
+        console.log('🔍 Запрос на удаление пользователя:', req.user);
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: 'Ошибка аутентификации' });
+        }
+
+        const user = await User.findByIdAndDelete(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
-        console.log('Пользователь успешно удалён:', user);
+        console.log('✅ Пользователь успешно удалён:', user);
         res.json({ message: 'Пользователь успешно удалён' });
     } catch (err) {
-        console.error('Ошибка при удалении пользователя:', err.message || err);
-        res.status(500).json({ error: err.message || 'Ошибка при удалении пользователя' });
+        console.error('❌ Ошибка при удалении пользователя:', err.message || err);
+        res.status(500).json({ error: 'Ошибка при удалении пользователя' });
     }
 });
 
 
-router.get('/user', verifyToken, authMiddleware, async (req, res) => {
+
+router.get('/user', verifyToken, async (req, res) => {
     try {
         console.log('🔍 Запрос на загрузку пользователя:', req.user);
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: 'Ошибка аутентификации. Токен недействителен.' });
+        }
 
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
+
         if (!user.role) {
             user.role = 'user'; // Устанавливаем роль по умолчанию
         }
 
-        console.log('Информация о пользователе отправлена:', user);
+        console.log('✅ Информация о пользователе отправлена:', user);
         res.json(user);
     } catch (err) {
-        console.error('Ошибка при получении информации о пользователе:', err.message || err);
-        res.status(500).json({ error: err.message || 'Ошибка сервера' });
+        console.error('❌ Ошибка при получении информации о пользователе:', err.message || err);
+        res.status(500).json({ error: 'Ошибка сервера при загрузке пользователя' });
     }
 });
+
 
 
 router.put('/user', async (req, res) => {
@@ -295,11 +306,20 @@ router.post('/verify-code', async (req, res) => {
         if (user.twoFactorCode === code && user.twoFactorExpires > new Date()) {
             user.twoFactorCode = null;
             user.twoFactorExpires = null;
-            await user.save();
 
+            // ✅ Генерируем токен
             const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
 
-            return res.status(200).json({ success: true, message: 'Код верный.', token });
+            // ✅ Сохраняем токен в `activeToken`
+            user.activeToken = token;
+            await user.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Код верный. Перенаправляем на главную страницу...',
+                token,  // 🔥 Теперь токен отправляется в ответе
+                redirect: 'http://localhost:5000/html/index.html'  // Измени путь, если нужно
+            });
         } else {
             return res.status(400).json({ success: false, message: 'Неверный или истёкший код.' });
         }
@@ -308,6 +328,7 @@ router.post('/verify-code', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Ошибка при проверке кода.' });
     }
 });
+
 
 
 module.exports = router;
