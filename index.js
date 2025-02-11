@@ -48,6 +48,7 @@ const universitiesRoutes = require('./src/routes/universities');
 const commentsRoutes = require('./src/routes/comments');
 const repliesRoutes = require('./src/routes/replies');
 
+app.use('/universities', universitiesRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth', checkDatabaseConnection, authRoutes);
 app.use('/posts', checkDatabaseConnection, postsRoutes);

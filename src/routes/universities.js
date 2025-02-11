@@ -2,6 +2,7 @@ const express = require('express');
 const University = require('../models/University');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
+const Post = require('../models/Post');
 
 const router = express.Router();
 
@@ -89,5 +90,34 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: 'Ошибка при удалении университета' });
     }
 });
+
+
+router.get('/ratings', async (req, res) => {
+    try {
+        const universities = await University.find();
+        const results = [];
+
+        for (const university of universities) {
+            const totalReviews = await Post.find({ university: university._id });
+            const positive = totalReviews.filter(r => r.rating >= 4).length;
+            const negative = totalReviews.filter(r => r.rating < 4).length;
+
+            results.push({
+                name: university.name,
+                positive,
+                negative,
+            });
+        }
+
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/ratings-page', (req, res) => {
+    res.render('ratings');
+});
+
 
 module.exports = router;
