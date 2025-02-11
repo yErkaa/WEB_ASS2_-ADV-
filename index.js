@@ -9,9 +9,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+module.exports = app
 mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000, // Ожидание подключения к базе (5 сек)
-    socketTimeoutMS: 45000, // Таймаут соединения (45 сек)
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
 })
     .then(() => console.log('✅ MongoDB подключена'))
     .catch(err => console.error('❌ Ошибка подключения к MongoDB:', err));
@@ -48,13 +49,14 @@ const universitiesRoutes = require('./src/routes/universities');
 const commentsRoutes = require('./src/routes/comments');
 const repliesRoutes = require('./src/routes/replies');
 
-app.use('/universities', universitiesRoutes);
+app.use(checkDatabaseConnection);
+
 app.use('/admin', adminRoutes);
-app.use('/auth', checkDatabaseConnection, authRoutes);
-app.use('/posts', checkDatabaseConnection, postsRoutes);
-app.use('/universities', checkDatabaseConnection, universitiesRoutes);
-app.use('/comments', checkDatabaseConnection, commentsRoutes);
-app.use('/replies', checkDatabaseConnection, repliesRoutes);
+app.use('/auth', authRoutes);
+app.use('/posts',  postsRoutes);
+app.use('/universities', universitiesRoutes);
+app.use('/comments',  commentsRoutes);
+app.use('/replies',  repliesRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));

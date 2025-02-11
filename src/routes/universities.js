@@ -47,6 +47,55 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/ratings', async (req, res) => {
+    try {
+        const universities = await University.aggregate([
+            {
+                $lookup: {
+                    from: "posts",
+                    localField: "_id",
+                    foreignField: "university",
+                    as: "reviews"
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    positive: {
+                        $size: {
+                            $filter: {
+                                input: "$reviews",
+                                as: "review",
+                                cond: { $gte: ["$$review.rating", 4] }
+                            }
+                        }
+                    },
+                    negative: {
+                        $size: {
+                            $filter: {
+                                input: "$reviews",
+                                as: "review",
+                                cond: { $lte: ["$$review.rating", 2] }
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+        if (!universities.length) {
+            console.warn("⚠️ Данные по рейтингам университетов отсутствуют");
+        }
+
+        res.json(universities);
+    } catch (error) {
+        console.error('❌ Ошибка при получении рейтингов:', error);
+        res.status(503).json({ error: 'Ошибка сервера. Попробуйте позже.' });
+    }
+});
+
+
+
 router.get('/:id', async (req, res) => {
     try {
         const university = await University.findById(req.params.id);
@@ -88,30 +137,6 @@ router.delete('/:id', async (req, res) => {
     } catch (err) {
         console.error('Ошибка при удалении университета:', err);
         res.status(500).json({ error: 'Ошибка при удалении университета' });
-    }
-});
-
-
-router.get('/ratings', async (req, res) => {
-    try {
-        const universities = await University.find();
-        const results = [];
-
-        for (const university of universities) {
-            const totalReviews = await Post.find({ university: university._id });
-            const positive = totalReviews.filter(r => r.rating >= 4).length;
-            const negative = totalReviews.filter(r => r.rating < 4).length;
-
-            results.push({
-                name: university.name,
-                positive,
-                negative,
-            });
-        }
-
-        res.json(results);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
     }
 });
 

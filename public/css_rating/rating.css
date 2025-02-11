@@ -1,0 +1,132 @@
+/* 📌 Общие стили */
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #eaf5ea;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden; /* ✅ Убирает горизонтальный скролл */
+}
+
+/* 📌 Шапка */
+header {
+    background-color: #28a745;
+    color: white;
+    padding: 15px 0;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+header nav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+header nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 5px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+header nav a:hover {
+    background-color: #218838;
+}
+
+/* 📌 Контейнер страницы */
+.content-container {
+    flex: 1;  /* ✅ Растягиваем контент, если его мало */
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Фикс футера, чтобы он не сползал */
+footer {
+    background-color: #28a745;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    width: 100%;
+    position: sticky;
+    bottom: 0;
+}
+
+/* 📌 Верхний блок графиков */
+.charts-containers {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* 📊 Гистограмма */
+.big-chart-boxs {
+    flex: 2;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 600px;
+    height: 350px;  /* ✅ Ограничиваем высоту */
+}
+
+/* 📊 Круговая диаграмма */
+/* 📌 Маленький график (круговая диаграмма) */
+.small-chart-boxs {
+    flex: 1;
+    max-width: 250px;  /* ✅ Уменьшил максимальную ширину */
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* ✅ Выравнивание по центру */
+    justify-content: center; /* ✅ Выравнивание по центру */
+}
+
+/* 📌 Настройки высоты для круговой диаграммы */
+.small-chart-boxs canvas {
+    width: 100% !important;
+    max-width: 200px !important; /* ✅ Ограничил максимальную ширину */
+    max-height: 200px !important; /* ✅ Ограничил высоту */
+}
+
+
+/* 📌 Блок графика оценок */
+.chart-box {
+    max-width: 900px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* 📊 График оценок 1-5 */
+#detailedChart {
+    max-height: 250px !important;
+    width: 100% !important;
+}

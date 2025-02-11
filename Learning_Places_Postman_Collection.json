@@ -64,7 +64,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{ \"title\": \"Test Post\", \"content\": \"Test Content\", \"rating\": 0, \"author\": \"{{user_id}}\", \"university\": \"67a89baef4aee375e04e5a40\" }"
+          "raw": "{ \"title\": \"Test Post\", \"review\": \"Test Content\", \"rating\": 3, \"author\": \"67aafd4335b2be40191c95de\", \"university\": \"S. Seifullin Kazakh Agro Technical University\" }"
         }
       },
       "event": [{
@@ -73,9 +73,9 @@
           "exec": [
             "pm.test(\"Post created\", function () { pm.response.to.have.status(201); });",
             "var responseJson = pm.response.json();",
-            "if (responseJson._id) {",
-            "    pm.environment.set(\"post_id\", responseJson._id);",
-            "    console.log(\"✅ Post ID saved:\", responseJson._id);",
+            "if (responseJson.post && responseJson.post._id) {",
+            "    pm.environment.set(\"post_id\", responseJson.post._id);",
+            "    console.log(\"✅ Post ID saved:\", responseJson.post._id);",
             "} else {",
             "    pm.test(\"❌ Error: Post ID not found\", function () { pm.response.to.have.status(500); });",
             "}"
@@ -83,6 +83,7 @@
         }
       }]
     },
+
     {
       "name": "Posts - Get by ID",
       "request": {
@@ -125,7 +126,6 @@
         "script": { "exec": ["pm.test(\"Post updated\", function () { pm.response.to.have.status(200); });"] }
       }]
     },
-
     {
       "name": "Comments - Create",
       "request": {
@@ -146,9 +146,9 @@
           "exec": [
             "pm.test(\"Comment created\", function () { pm.response.to.have.status(201); });",
             "var responseJson = pm.response.json();",
-            "if (responseJson._id) {",
-            "    pm.environment.set(\"comment_id\", responseJson._id);",
-            "    console.log(\"✅ Comment ID saved:\", responseJson._id);",
+            "if (responseJson.comment && responseJson.comment._id) {",
+            "    pm.environment.set(\"comment_id\", responseJson.comment._id);",
+            "    console.log(\"✅ Comment ID saved:\", responseJson.comment._id);",
             "} else {",
             "    pm.test(\"❌ Error: Comment ID not found\", function () { pm.response.to.have.status(500); });",
             "}"
@@ -198,19 +198,25 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{ \"content\": \"Test Reply\" }"
+          "raw": "{ \"content\": \"Test Reply\", \"postId\": \"{{post_id}}\", \"commentId\": \"{{comment_id}}\" }"
         }
       },
-      "exec": [
-        "pm.test(\"Reply created\", function () { pm.response.to.have.status(201); });",
-        "var responseJson = pm.response.json();",
-        "if (responseJson._id) {",
-        "    pm.environment.set(\"reply_id\", responseJson._id);",
-        "    console.log(\"✅ Reply ID saved:\", responseJson._id);",
-        "} else {",
-        "    pm.test(\"❌ Error: Reply ID not found\", function () { pm.response.to.have.status(500); });",
-        "}"
-      ]
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Reply created\", function () { pm.response.to.have.status(201); });",
+            "var responseJson = pm.response.json();",
+            "console.log(\"📩 Ответ сервера:\", responseJson);",
+            "if (responseJson._id) {",
+            "    pm.environment.set(\"reply_id\", responseJson._id);",
+            "    console.log(\"✅ Reply ID saved:\", responseJson._id);",
+            "} else {",
+            "    pm.test(\"❌ Error: Reply ID not found\", function () { pm.response.to.have.status(500); });",
+            "}"
+          ]
+        }
+      }]
     },
     {
       "name": "Replies - Get for Comment",
@@ -220,7 +226,11 @@
       },
       "event": [{
         "listen": "test",
-        "script": { "exec": ["pm.test(\"Fetched replies\", function () { pm.response.to.have.status(200); });"] }
+        "script": {
+          "exec": [
+            "pm.test(\"Fetched replies\", function () { pm.response.to.have.status(200); });"
+          ]
+        }
       }]
     },
     {
@@ -228,11 +238,17 @@
       "request": {
         "method": "POST",
         "url": "{{base_url}}/replies/{{reply_id}}/toggle-like",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ]
       },
       "event": [{
         "listen": "test",
-        "script": { "exec": ["pm.test(\"Reply like toggled\", function () { pm.response.to.have.status(200); });"] }
+        "script": {
+          "exec": [
+            "pm.test(\"Reply like toggled\", function () { pm.response.to.have.status(200); });"
+          ]
+        }
       }]
     },
     {
@@ -251,7 +267,11 @@
       },
       "event": [{
         "listen": "test",
-        "script": { "exec": ["pm.test(\"Reply updated\", function () { pm.response.to.have.status(200); });"] }
+        "script": {
+          "exec": [
+            "pm.test(\"Reply updated\", function () { pm.response.to.have.status(200); });"
+          ]
+        }
       }]
     },
     {
@@ -259,11 +279,17 @@
       "request": {
         "method": "DELETE",
         "url": "{{base_url}}/replies/{{reply_id}}",
-        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ]
       },
       "event": [{
         "listen": "test",
-        "script": { "exec": ["pm.test(\"Reply deleted\", function () { pm.response.to.have.status(200); });"] }
+        "script": {
+          "exec": [
+            "pm.test(\"Reply deleted\", function () { pm.response.to.have.status(200); });"
+          ]
+        }
       }]
     },
     {
