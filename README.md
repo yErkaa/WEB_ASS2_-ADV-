@@ -3,6 +3,9 @@
 ## Overview
 This project is a web application designed to provide a structured and secure platform for managing user-generated content. The system is built using Node.js with Express.js for the backend, MongoDB as the database, and follows a RESTful API architecture.
 
+Link:
+https://unitalk-astana.onrender.com
+
 ## Features
 - User authentication (JWT-based login and registration)
 - CRUD operations for posts and comments
