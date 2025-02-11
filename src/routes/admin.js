@@ -4,12 +4,10 @@ const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 const University = require('../models/University');
 
-// 📌 Проверка админ-доступа
 router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ message: 'Добро пожаловать в админ-панель' });
 });
 
-// 📌 Добавление нового университета (Только админ)
 router.post('/university', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { name, address, description } = req.body;

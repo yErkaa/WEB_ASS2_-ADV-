@@ -1,9 +1,8 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const University = require('./src/models/University');
-// Путь к вашей модели University
 
-const MONGO_URI = process.env.MONGO_URI; // URL вашей базы данных MongoDB
+const MONGO_URI = process.env.MONGO_URI;
 
 const universities = [
     {
@@ -59,25 +58,20 @@ const universities = [
 ];
 
 
-// Функция для подключения к базе данных и заполнения коллекции
 const seedUniversities = async () => {
     try {
-        // Подключаемся к MongoDB
         await mongoose.connect(MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
         console.log('Подключение к MongoDB установлено.');
 
-        // Удаляем все записи из коллекции перед добавлением новых (опционально)
         await University.deleteMany();
         console.log('Коллекция Universities очищена.');
 
-        // Добавляем университеты
         await University.insertMany(universities);
         console.log('Университеты успешно добавлены в базу данных.');
 
-        // Завершаем подключение
         mongoose.connection.close();
         console.log('Подключение к MongoDB закрыто.');
     } catch (error) {

@@ -34,7 +34,6 @@ function showModalWithCancel(message, input = false, callback = null, cancelCall
 
 async function checkDatabaseStatus() {
     try {
-        // Устанавливаем таймаут на 2 секунды
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 2000);
 
@@ -89,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             console.log(`🔥 Загружаем пост ${postId} и комментарий ${commentId}`);
 
-            // Загружаем пост
             const postRes = await fetch(`${API_BASE_URL}/posts/${postId}`);
             if (!postRes.ok) throw new Error('Ошибка загрузки поста');
             const { post } = await postRes.json();  // ✅ Извлекаем `post` из ответа
@@ -103,7 +101,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <p><b>Автор поста:</b> ${post.author?.nickname || post.author?.username || 'Неизвестный автор'}</p>
             `;
 
-            // Загружаем комментарий
             const commentRes = await fetch(`${API_BASE_URL}/comments/comment/${commentId}`);
             if (!commentRes.ok) throw new Error('Ошибка загрузки комментария');
             const comment = await commentRes.json();
@@ -173,7 +170,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            // ✅ Получаем `postId` и `commentId` из URL (они должны быть!)
             const urlParams = new URLSearchParams(window.location.search);
             const postId = urlParams.get('postId');
             const commentId = urlParams.get('commentId');
@@ -191,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ content, postId }) // ✅ Передаём `postId` в запросе
+                body: JSON.stringify({ content, postId })
             });
 
             if (!response.ok) {

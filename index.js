@@ -9,7 +9,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Подключение к MongoDB (удалены лишние повторения)
 mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 5000, // Ожидание подключения к базе (5 сек)
     socketTimeoutMS: 45000, // Таймаут соединения (45 сек)
@@ -17,7 +16,6 @@ mongoose.connect(process.env.MONGO_URI, {
     .then(() => console.log('✅ MongoDB подключена'))
     .catch(err => console.error('❌ Ошибка подключения к MongoDB:', err));
 
-// ✅ Переподключение при разрыве соединения
 mongoose.connection.on('disconnected', () => {
     console.warn('⚠️ Соединение с MongoDB потеряно. Пробуем переподключиться...');
     setTimeout(() => {
@@ -31,7 +29,6 @@ mongoose.connection.on('error', err => {
     console.error('⚠️ Ошибка MongoDB:', err);
 });
 
-// ✅ Middleware для проверки соединения с базой
 const checkDatabaseConnection = (req, res, next) => {
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ error: 'База данных недоступна. Попробуйте позже.' });
@@ -39,13 +36,11 @@ const checkDatabaseConnection = (req, res, next) => {
     next();
 };
 
-// ✅ Middleware для логирования запросов
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-// ✅ Подключаем роуты
 const adminRoutes = require('./src/routes/admin');
 const authRoutes = require('./src/routes/auth');
 const postsRoutes = require('./src/routes/posts');
@@ -60,11 +55,9 @@ app.use('/universities', checkDatabaseConnection, universitiesRoutes);
 app.use('/comments', checkDatabaseConnection, commentsRoutes);
 app.use('/replies', checkDatabaseConnection, repliesRoutes);
 
-// ✅ Подключаем статические файлы
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Проверка состояния базы
 app.get('/db-status', async (req, res) => {
     try {
         await mongoose.connection.db.admin().ping();
@@ -75,19 +68,15 @@ app.get('/db-status', async (req, res) => {
     }
 });
 
-// ✅ Основные страницы
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/html/index.html')));
 app.get('/two-factor-auth', (req, res) => res.sendFile(path.join(__dirname, 'public/html/two-factor-auth.html')));
 
-// ✅ Обработчик 404
 app.use((req, res) => res.status(404).send('Страница не найдена'));
 
-// ✅ Глобальный обработчик ошибок
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err.message);
     res.status(500).json({ error: 'Что-то пошло не так!' });
 });
 
-// ✅ Запускаем сервер
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Сервер запущен на порту ${PORT}`));

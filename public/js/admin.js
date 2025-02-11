@@ -22,7 +22,7 @@ function showModal(message, input = false, callback = null, delayReload = false)
         if (delayReload) {
             setTimeout(() => {
                 location.reload();
-            }, 1000); // Делаем задержку в 1 секунду
+            }, 1000);
         }
     });
 }
@@ -47,7 +47,7 @@ document.getElementById('addUniversity').addEventListener('click', async () => {
 
         if (!response.ok) throw new Error('Ошибка при добавлении университета');
 
-        showModal('Университет добавлен!', false, null, true); // Добавляем задержку перед обновлением
+        showModal('Университет добавлен!', false, null, true);
     } catch (err) {
         console.error('Ошибка при добавлении университета:', err);
         showModal('Ошибка сервера');

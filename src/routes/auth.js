@@ -85,7 +85,6 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
     console.log("📩 Полученные данные (req.body):", req.body);
     console.log("📩 Полученный файл (req.file):", req.file);
 
-    // 🔥 Делаем `password` обязательным полем
     if (!req.body.password) {
         return res.status(400).json({ error: 'Пароль не был передан!' });
     }
@@ -219,7 +218,7 @@ router.get('/user', verifyToken, async (req, res) => {
         }
 
         if (!user.role) {
-            user.role = 'user'; // Устанавливаем роль по умолчанию
+            user.role = 'user';
         }
 
         console.log('✅ Информация о пользователе отправлена:', user);
@@ -232,7 +231,6 @@ router.get('/user', verifyToken, async (req, res) => {
 
 
 
-// 📌 Обновление никнейма
 router.put('/user', authMiddleware, async (req, res) => {
     try {
         const { nickname } = req.body;
@@ -240,7 +238,7 @@ router.put('/user', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Никнейм не может быть пустым' });
         }
 
-        const userId = req.user.id; // ✅ Исправлено: теперь берём ID из `req.user`
+        const userId = req.user.id;
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'Пользователь не найден' });
@@ -305,18 +303,16 @@ router.post('/verify-code', async (req, res) => {
             user.twoFactorCode = null;
             user.twoFactorExpires = null;
 
-            // ✅ Генерируем токен
             const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
 
-            // ✅ Сохраняем токен в `activeToken`
             user.activeToken = token;
             await user.save();
 
             return res.status(200).json({
                 success: true,
                 message: 'Код верный. Перенаправляем на главную страницу...',
-                token,  // 🔥 Теперь токен отправляется в ответе
-                redirect: 'http://localhost:5000/html/index.html'  // Измени путь, если нужно
+                token,
+                redirect: 'http://localhost:5000/html/index.html'
             });
         } else {
             return res.status(400).json({ success: false, message: 'Неверный или истёкший код.' });

@@ -26,7 +26,7 @@ router.get('/:post_id', async (req, res) => {
 
         const formattedComments = comments.map(comment => ({
             ...comment.toObject(),
-            repliesCount: comment.repliesCount || 0  // ✅ Гарантируем, что поле передаётся
+            repliesCount: comment.repliesCount || 0
         }));
 
         res.json(formattedComments);

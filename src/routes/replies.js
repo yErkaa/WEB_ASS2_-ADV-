@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 
 const router = express.Router();
 
-// 📌 Создать ответ на комментарий
 router.post('/comment/:commentId/reply', authMiddleware, async (req, res) => {
     try {
         const { content, postId } = req.body;
@@ -35,7 +34,6 @@ router.post('/comment/:commentId/reply', authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Получить все ответы на комментарий
 router.get('/comment/:commentId', async (req, res) => {
     try {
         const { commentId } = req.params;
@@ -64,7 +62,6 @@ router.get('/comment/:commentId', async (req, res) => {
 
 
 
-// 📌 Лайкнуть / убрать лайк у ответа
 router.post('/:replyId/toggle-like', authMiddleware, async (req, res) => {
     try {
         const { replyId } = req.params;
@@ -88,7 +85,6 @@ router.post('/:replyId/toggle-like', authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Обновить ответ (редактирование)
 router.put('/:replyId', authMiddleware, async (req, res) => {
     try {
         const { replyId } = req.params;
@@ -117,7 +113,6 @@ router.put('/:replyId', authMiddleware, async (req, res) => {
     }
 });
 
-// 📌 Удалить ответ
 router.delete('/:replyId', authMiddleware, async (req, res) => {
     try {
         const { replyId } = req.params;

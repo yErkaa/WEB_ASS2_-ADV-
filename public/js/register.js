@@ -92,12 +92,12 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
     const formData = new FormData();
     formData.append('username', username);
-    formData.append('password', password); // 🔥 Теперь пароль отправляется правильно
+    formData.append('password', password);
     if (avatar) {
         formData.append('avatar', avatar);
     }
 
-    console.log("📩 Отправляемые данные:", [...formData.entries()]); // Проверяем, что отправляется
+    console.log("📩 Отправляемые данные:", [...formData.entries()]);
 
     try {
         const response = await fetch('http://localhost:5000/auth/register', {

@@ -5,7 +5,6 @@ const User = require('./src/models/User');
 const Post = require('./src/models/Post');
 const University = require('./src/models/University');
 
-// Подключение к MongoDB
 const MONGO_URI = process.env.MONGO_URI || 'your_mongodb_connection_string';
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
@@ -27,12 +26,10 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 
 const seedDatabase = async () => {
     try {
-        // Очищаем существующие данные
         await User.deleteMany({});
         await Post.deleteMany({});
         console.log('Существующие данные удалены');
 
-        // // Получаем университеты из базы
         // const universities = await University.find();
         // if (universities.length === 0) {
         //     console.error('В базе данных нет университетов');
@@ -53,11 +50,11 @@ const seedDatabase = async () => {
         //     // Для каждого пользователя создаём посты для 10 университетов
         //     for (const university of universities) {
         //         const post = new Post({
-        //             title: generateRussianText(5), // Заголовок на русском
-        //             content: generateRussianText(30), // Контент на русском
-        //             rating: faker.number.int({ min: 1, max: 5 }), // Рейтинг
-        //             author: user._id, // ID пользователя
-        //             university: university._id, // ID университета
+        //             title: generateRussianText(5),
+        //             content: generateRussianText(30),
+        //             rating: faker.number.int({ min: 1, max: 5 }),
+        //             author: user._id,
+        //             university: university._id,
         //         });
         //
         //         await post.save();

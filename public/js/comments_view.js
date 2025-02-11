@@ -95,13 +95,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/comments/create', { // ✅ Отправляем post_id
+            const response = await fetch('http://localhost:5000/comments/create', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ post_id: postId, content }) // ✅ Передаём post_id в запросе
+                body: JSON.stringify({ post_id: postId, content })
             });
 
             if (!response.ok) throw new Error('Ошибка при создании комментария');
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const API_BASE_URL = 'http://localhost:5000'; // 👈 Добавляем базовый URL
+    const API_BASE_URL = 'http://localhost:5000';
 
 
     commentsContainer.addEventListener('click', async (e) => {
@@ -193,25 +193,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log(`🔥 Отправка запроса на лайк: ${API_BASE_URL}/comments/${commentId}/toggle-like`);
 
             try {
-                const response = await fetch(`${API_BASE_URL}/comments/${commentId}/toggle-like`, { // 👈 Используем полный URL
+                const response = await fetch(`${API_BASE_URL}/comments/${commentId}/toggle-like`, {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 });
 
                 if (!response.ok) {
-                    const text = await response.text(); // Читаем ответ как текст, чтобы увидеть ошибку
+                    const text = await response.text();
                     throw new Error(`Ошибка сервера: ${text}`);
                 }
 
                 const { likesCount, liked } = await response.json();
 
-                // Обновляем лайки
                 const likesCountElement = document.querySelector(`.likes-count[data-id="${commentId}"]`);
                 if (likesCountElement) {
                     likesCountElement.textContent = likesCount;
                 }
 
-                // Переключаем стиль кнопки
                 e.target.classList.toggle('liked', liked);
 
                 console.log(`✅ Лайк обновлен: ${likesCount} лайков`);
