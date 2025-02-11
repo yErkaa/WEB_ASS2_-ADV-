@@ -21,20 +21,52 @@ This project is a web application designed to provide a structured and secure pl
  User Schema
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["user", "admin"], default: "user" }
-});
+    username: { type: String, required: true, unique: true, trim: true },
+    password: { type: String, required: true },
+    avatar: { type: String, default: '' },
+    nickname: { type: String, default: '' },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },  // Добавлено поле role
+    activeToken: { type: String, default: null },
+    twoFactorCode: { type: String, default: null },
+    twoFactorExpires: { type: Date, default: null }
+}, { timestamps: true });
 
 Post Schema
 javascript
 const PostSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  content: { type: String, required: true },
-  author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  likes: { type: Number, default: 0 }
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    rating: { type: Number, required: true },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    university: { type: mongoose.Schema.Types.ObjectId, ref: 'University', required: true },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+}, { timestamps: true });
+
+Comment Schema
+const CommentSchema = new mongoose.Schema({
+    post_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
+    author_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // 👈 Новое поле для лайков
+    createdAt: { type: Date, default: Date.now },
+    content: { type: String, required: true },
+}, { timestamps: true });
+
+Reply Schema
+const ReplySchema = new mongoose.Schema({
+    postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
+    commentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', required: true },
+    authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    content: { type: String, required: true },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    createdAt: { type: Date, default: Date.now },
 });
+
+University Schema
+const UniversitySchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true, trim: true },
+    address: { type: String, required: true },
+    description: { type: String, default: "Описание отсутствует" },
+}, { timestamps: true });
 
 
 ## API Endpoints
