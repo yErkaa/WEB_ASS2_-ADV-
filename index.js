@@ -9,7 +9,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-module.exports = app
+module.exports = app;
+
 mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
@@ -58,9 +59,25 @@ app.use('/universities', universitiesRoutes);
 app.use('/comments',  commentsRoutes);
 app.use('/replies',  repliesRoutes);
 
+// ✅ Настройка статических файлов
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ✅ Отключаем автоматическое подставление `.html`
+const pages = [
+    'index', 'post_view', 'profile', 'admin',
+    'replies_view', 'login', 'comments_view',
+    'map', 'ratings', 'register'
+];
+
+// ✅ Универсальный обработчик для страниц без `.html`
+pages.forEach(page => {
+    app.get(`/${page}`, (req, res) => {
+        res.sendFile(path.join(__dirname, `public/html/${page}.html`));
+    });
+});
+
+// ✅ Проверка соединения с БД
 app.get('/db-status', async (req, res) => {
     try {
         await mongoose.connection.db.admin().ping();
@@ -71,9 +88,7 @@ app.get('/db-status', async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/html/index.html')));
-app.get('/two-factor-auth', (req, res) => res.sendFile(path.join(__dirname, 'public/html/two-factor-auth.html')));
-
+// ✅ 404 ошибка для ненайденных страниц
 app.use((req, res) => res.status(404).send('Страница не найдена'));
 
 app.use((err, req, res, next) => {
